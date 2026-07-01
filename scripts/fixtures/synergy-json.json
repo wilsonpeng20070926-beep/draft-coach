@@ -1,0 +1,11 @@
+{
+  "note": "OP.GG currently returns typed text for selected synergy fields.",
+  "response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "class LolGetChampionSynergies: data\nclass Data: synergies\nclass Synergie: champion_id,champion_name,position,score,score_rank,synergy_champion_id,synergy_champion_name,synergy_position,play,win,win_rate,synergy_tier_data\nclass SynergyTierData: tier,rank,rank_prev,rank_prev_patch\n\nLolGetChampionSynergies(Data([Synergie(61,\"Orianna\",\"MID\",0,1,64,\"Lee Sin\",\"JUNGLE\",3852,2005,0.52,SynergyTierData(0,1,1,1)),Synergie(61,\"Orianna\",\"MID\",0,2,5,\"Xin Zhao\",\"JUNGLE\",2715,1361,0.5,SynergyTierData(1,3,3,3)),Synergie(61,\"Orianna\",\"MID\",0,3,56,\"Nocturne\",\"JUNGLE\",2623,1352,0.52,SynergyTierData(2,6,6,5)),Synergie(61,\"Orianna\",\"MID\",0,4,59,\"Jarvan IV\",\"JUNGLE\",2134,1039,0.49,SynergyTierData(3,17,17,20)),Synergie(61,\"Orianna\",\"MID\",0,5,254,\"Vi\",\"JUNGLE\",1485,729,0.49,SynergyTierData(2,16,16,12)),Synergie(61,\"Orianna\",\"MID\",0,6,104,\"Graves\",\"JUNGLE\",1360,618,0.45,SynergyTierData(3,19,19,19)),Synergie(61,\"Orianna\",\"MID\",0,7,950,\"Naafiri\",\"JUNGLE\",1279,627,0.49,SynergyTierData(2,15,15,4)),Synergie(61,\"Orianna\",\"MID\",0,8,62,\"Wukong\",\"JUNGLE\",1185,599,0.51,SynergyTierData(2,11,11,34)),Synergie(61,\"Orianna\",\"MID\",0,9,234,\"Viego\",\"JUNGLE\",1125,528,0.47,SynergyTierData(3,30,30,28)),Synergie(61,\"Orianna\",\"MID\",0,10,517,\"Sylas\",\"JUNGLE\",755,379,0.5,SynergyTierData(2,7,7,8))]))"
+      }
+    ]
+  }
+}
