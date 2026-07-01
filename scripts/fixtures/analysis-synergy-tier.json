@@ -1,0 +1,101 @@
+{
+  "note": "Phase 8 synergy tier probe. OP.GG returns synergy_tier_data.tier where lower is stronger (0=OP, 4=C).",
+  "desired_output_fields": [
+    "data.synergies.top[].{champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate}",
+    "data.synergies.top[].synergy_tier_data.{tier,rank,rank_prev,rank_prev_patch}",
+    "data.synergies.jungle[].{champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate}",
+    "data.synergies.jungle[].synergy_tier_data.{tier,rank,rank_prev,rank_prev_patch}",
+    "data.synergies.mid[].{champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate}",
+    "data.synergies.mid[].synergy_tier_data.{tier,rank,rank_prev,rank_prev_patch}",
+    "data.synergies.adc[].{champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate}",
+    "data.synergies.adc[].synergy_tier_data.{tier,rank,rank_prev,rank_prev_patch}",
+    "data.synergies.support[].{champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate}",
+    "data.synergies.support[].synergy_tier_data.{tier,rank,rank_prev,rank_prev_patch}"
+  ],
+  "calls": [
+    {
+      "champion": "AHRI",
+      "position": "mid",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "class LolGetChampionAnalysis: data\nclass Data: synergies\nclass Synergies: top,jungle,adc,support\nclass Top: champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate,synergy_tier_data\nclass SynergyTierData: tier,rank,rank_prev,rank_prev_patch\n\nLolGetChampionAnalysis(Data(Synergies([Top(103,\"Ahri\",\"MID\",24,\"Jax\",\"TOP\",5,0,403,230,0.57,SynergyTierData(1,2,2,9)),Top(103,\"Ahri\",\"MID\",86,\"Garen\",\"TOP\",10,0,277,152,0.55,SynergyTierData(1,1,1,8)),Top(103,\"Ahri\",\"MID\",41,\"Gangplank\",\"TOP\",7,0,352,193,0.55,SynergyTierData(1,3,3,1))],[Top(103,\"Ahri\",\"MID\",5,\"Xin Zhao\",\"JUNGLE\",8,0,354,189,0.53,SynergyTierData(4,30,31,4)),Top(103,\"Ahri\",\"MID\",64,\"Lee Sin\",\"JUNGLE\",1,0,1352,717,0.53,SynergyTierData(1,2,2,1)),Top(103,\"Ahri\",\"MID\",517,\"Sylas\",\"JUNGLE\",4,0,503,255,0.51,SynergyTierData(1,4,4,22))],[Top(103,\"Ahri\",\"MID\",222,\"Jinx\",\"ADC\",9,0,383,207,0.54,SynergyTierData(2,3,3,3)),Top(103,\"Ahri\",\"MID\",18,\"Tristana\",\"ADC\",10,0,358,191,0.53,SynergyTierData(3,15,15,15)),Top(103,\"Ahri\",\"MID\",22,\"Ashe\",\"ADC\",7,0,672,356,0.53,SynergyTierData(1,2,2,2))],[Top(103,\"Ahri\",\"MID\",43,\"Karma\",\"SUPPORT\",3,0,587,317,0.54,SynergyTierData(2,10,10,10)),Top(103,\"Ahri\",\"MID\",412,\"Thresh\",\"SUPPORT\",2,0,626,337,0.54,SynergyTierData(1,4,4,1)),Top(103,\"Ahri\",\"MID\",89,\"Leona\",\"SUPPORT\",9,0,385,205,0.53,SynergyTierData(1,1,1,8))])))"
+          }
+        ]
+      }
+    },
+    {
+      "champion": "ORIANNA",
+      "position": "mid",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "class LolGetChampionAnalysis: data\nclass Data: synergies\nclass Synergies: top,jungle,adc,support\nclass Top: champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate,synergy_tier_data\nclass SynergyTierData: tier,rank,rank_prev,rank_prev_patch\n\nLolGetChampionAnalysis(Data(Synergies([Top(61,\"Orianna\",\"MID\",266,\"Aatrox\",\"TOP\",5,0,189,97,0.51,SynergyTierData(2,14,14,26)),Top(61,\"Orianna\",\"MID\",24,\"Jax\",\"TOP\",4,0,209,104,0.5,SynergyTierData(1,2,2,9)),Top(61,\"Orianna\",\"MID\",14,\"Sion\",\"TOP\",6,0,180,85,0.47,SynergyTierData(1,8,8,4))],[Top(61,\"Orianna\",\"MID\",104,\"Graves\",\"JUNGLE\",5,0,265,140,0.53,SynergyTierData(3,20,20,29)),Top(61,\"Orianna\",\"MID\",254,\"Vi\",\"JUNGLE\",7,0,224,113,0.5,SynergyTierData(2,14,13,8)),Top(61,\"Orianna\",\"MID\",950,\"Naafiri\",\"JUNGLE\",4,0,282,140,0.5,SynergyTierData(2,8,8,9))],[Top(61,\"Orianna\",\"MID\",235,\"Senna\",\"ADC\",3,0,420,230,0.55,SynergyTierData(0,1,1,1)),Top(61,\"Orianna\",\"MID\",222,\"Jinx\",\"ADC\",9,0,202,108,0.53,SynergyTierData(2,3,3,3)),Top(61,\"Orianna\",\"MID\",22,\"Ashe\",\"ADC\",4,0,376,189,0.5,SynergyTierData(1,2,2,2))],[Top(61,\"Orianna\",\"MID\",53,\"Blitzcrank\",\"SUPPORT\",6,0,228,112,0.49,SynergyTierData(2,9,9,4)),Top(61,\"Orianna\",\"MID\",412,\"Thresh\",\"SUPPORT\",2,0,332,163,0.49,SynergyTierData(1,4,4,1)),Top(61,\"Orianna\",\"MID\",147,\"Seraphine\",\"SUPPORT\",7,0,225,110,0.49,SynergyTierData(2,8,8,3))])))"
+          }
+        ]
+      }
+    },
+    {
+      "champion": "JINX",
+      "position": "adc",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "class LolGetChampionAnalysis: data\nclass Data: synergies\nclass Synergies: top,jungle,mid,support\nclass Top: champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate,synergy_tier_data\nclass SynergyTierData: tier,rank,rank_prev,rank_prev_patch\n\nLolGetChampionAnalysis(Data(Synergies([Top(222,\"Jinx\",\"ADC\",266,\"Aatrox\",\"TOP\",4,0,415,241,0.58,SynergyTierData(2,14,14,26)),Top(222,\"Jinx\",\"ADC\",24,\"Jax\",\"TOP\",5,0,384,212,0.55,SynergyTierData(1,2,2,9)),Top(222,\"Jinx\",\"ADC\",777,\"Yone\",\"TOP\",2,0,486,267,0.55,SynergyTierData(1,5,5,7))],[Top(222,\"Jinx\",\"ADC\",517,\"Sylas\",\"JUNGLE\",2,0,719,401,0.56,SynergyTierData(1,4,4,22)),Top(222,\"Jinx\",\"ADC\",76,\"Nidalee\",\"JUNGLE\",10,0,337,180,0.53,SynergyTierData(2,5,5,5)),Top(222,\"Jinx\",\"ADC\",64,\"Lee Sin\",\"JUNGLE\",1,0,1270,677,0.53,SynergyTierData(1,2,2,1))],[Top(222,\"Jinx\",\"ADC\",55,\"Katarina\",\"MID\",10,0,301,173,0.57,SynergyTierData(1,2,3,2)),Top(222,\"Jinx\",\"ADC\",101,\"Xerath\",\"MID\",9,0,317,171,0.54,SynergyTierData(1,6,5,3)),Top(222,\"Jinx\",\"ADC\",103,\"Ahri\",\"MID\",5,0,406,218,0.54,SynergyTierData(2,11,11,5))],[Top(222,\"Jinx\",\"ADC\",53,\"Blitzcrank\",\"SUPPORT\",4,0,502,269,0.54,SynergyTierData(2,9,9,4)),Top(222,\"Jinx\",\"ADC\",43,\"Karma\",\"SUPPORT\",6,0,296,158,0.53,SynergyTierData(2,10,10,10)),Top(222,\"Jinx\",\"ADC\",412,\"Thresh\",\"SUPPORT\",1,0,2029,1081,0.53,SynergyTierData(1,4,4,1))])))"
+          }
+        ]
+      }
+    },
+    {
+      "champion": "YASUO",
+      "position": "mid",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "class LolGetChampionAnalysis: data\nclass Data: synergies\nclass Synergies: top,jungle,adc,support\nclass Top: champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate,synergy_tier_data\nclass SynergyTierData: tier,rank,rank_prev,rank_prev_patch\n\nLolGetChampionAnalysis(Data(Synergies([Top(157,\"Yasuo\",\"MID\",126,\"Jayce\",\"TOP\",4,0,248,128,0.52,SynergyTierData(1,7,6,12)),Top(157,\"Yasuo\",\"MID\",777,\"Yone\",\"TOP\",2,0,289,147,0.51,SynergyTierData(1,5,5,7)),Top(157,\"Yasuo\",\"MID\",54,\"Malphite\",\"TOP\",1,0,397,199,0.5,SynergyTierData(1,4,4,3))],[Top(157,\"Yasuo\",\"MID\",76,\"Nidalee\",\"JUNGLE\",4,0,305,162,0.53,SynergyTierData(2,5,5,5)),Top(157,\"Yasuo\",\"MID\",517,\"Sylas\",\"JUNGLE\",2,0,659,336,0.51,SynergyTierData(1,4,4,22)),Top(157,\"Yasuo\",\"MID\",131,\"Diana\",\"JUNGLE\",3,0,560,284,0.51,SynergyTierData(5,49,48,38))],[Top(157,\"Yasuo\",\"MID\",235,\"Senna\",\"ADC\",3,0,523,279,0.53,SynergyTierData(1,1,1,1)),Top(157,\"Yasuo\",\"MID\",222,\"Jinx\",\"ADC\",10,0,211,112,0.53,SynergyTierData(2,3,3,3)),Top(157,\"Yasuo\",\"MID\",22,\"Ashe\",\"ADC\",6,0,427,220,0.52,SynergyTierData(1,2,2,2))],[Top(157,\"Yasuo\",\"MID\",432,\"Bard\",\"SUPPORT\",5,0,295,155,0.53,SynergyTierData(1,3,3,2)),Top(157,\"Yasuo\",\"MID\",117,\"Lulu\",\"SUPPORT\",3,0,343,178,0.52,SynergyTierData(2,15,15,12)),Top(157,\"Yasuo\",\"MID\",350,\"Yuumi\",\"SUPPORT\",8,0,249,126,0.51,SynergyTierData(3,20,20,24))])))"
+          }
+        ]
+      }
+    },
+    {
+      "champion": "MALPHITE",
+      "position": "top",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "class LolGetChampionAnalysis: data\nclass Data: synergies\nclass Synergies: jungle,mid,adc,support\nclass Jungle: champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate,synergy_tier_data\nclass SynergyTierData: tier,rank,rank_prev,rank_prev_patch\n\nLolGetChampionAnalysis(Data(Synergies([Jungle(54,\"Malphite\",\"TOP\",517,\"Sylas\",\"JUNGLE\",2,0,583,312,0.54,SynergyTierData(1,4,4,22)),Jungle(54,\"Malphite\",\"TOP\",76,\"Nidalee\",\"JUNGLE\",10,0,252,133,0.53,SynergyTierData(2,5,5,5)),Jungle(54,\"Malphite\",\"TOP\",64,\"Lee Sin\",\"JUNGLE\",1,0,1017,533,0.52,SynergyTierData(1,2,2,1))],[Jungle(54,\"Malphite\",\"TOP\",101,\"Xerath\",\"MID\",10,0,242,132,0.55,SynergyTierData(1,6,5,3)),Jungle(54,\"Malphite\",\"TOP\",517,\"Sylas\",\"MID\",2,0,500,271,0.54,SynergyTierData(1,2,2,17)),Jungle(54,\"Malphite\",\"TOP\",84,\"Akali\",\"MID\",8,0,293,153,0.52,SynergyTierData(2,12,12,13))],[Jungle(54,\"Malphite\",\"TOP\",235,\"Senna\",\"ADC\",3,0,625,349,0.56,SynergyTierData(0,1,1,1)),Jungle(54,\"Malphite\",\"TOP\",222,\"Jinx\",\"ADC\",8,0,315,173,0.55,SynergyTierData(2,3,3,3)),Jungle(54,\"Malphite\",\"TOP\",22,\"Ashe\",\"ADC\",5,0,576,316,0.55,SynergyTierData(1,2,2,2))],[Jungle(54,\"Malphite\",\"TOP\",350,\"Yuumi\",\"SUPPORT\",8,0,329,183,0.56,SynergyTierData(3,20,20,24)),Jungle(54,\"Malphite\",\"TOP\",111,\"Nautilus\",\"SUPPORT\",2,0,485,265,0.55,SynergyTierData(2,6,6,7)),Jungle(54,\"Malphite\",\"TOP\",147,\"Seraphine\",\"SUPPORT\",6,0,393,214,0.54,SynergyTierData(2,8,8,3))])))"
+          }
+        ]
+      }
+    },
+    {
+      "champion": "AMUMU",
+      "position": "jungle",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "class LolGetChampionAnalysis: data\nclass Data: synergies\nclass Synergies: top,mid,adc,support\nclass Top: champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate,synergy_tier_data\nclass SynergyTierData: tier,rank,rank_prev,rank_prev_patch\n\nLolGetChampionAnalysis(Data(Synergies([Top(32,\"Amumu\",\"JUNGLE\",14,\"Sion\",\"TOP\",5,0,40,24,0.6,SynergyTierData(1,8,8,4)),Top(32,\"Amumu\",\"JUNGLE\",24,\"Jax\",\"TOP\",4,0,45,26,0.58,SynergyTierData(1,2,2,9)),Top(32,\"Amumu\",\"JUNGLE\",126,\"Jayce\",\"TOP\",2,0,52,30,0.58,SynergyTierData(1,6,7,12))],[Top(32,\"Amumu\",\"JUNGLE\",84,\"Akali\",\"MID\",8,0,33,20,0.61,SynergyTierData(2,12,12,13)),Top(32,\"Amumu\",\"JUNGLE\",517,\"Sylas\",\"MID\",3,0,40,24,0.6,SynergyTierData(1,2,2,17)),Top(32,\"Amumu\",\"JUNGLE\",112,\"Viktor\",\"MID\",1,0,99,57,0.58,SynergyTierData(1,4,4,4))],[Top(32,\"Amumu\",\"JUNGLE\",236,\"Lucian\",\"ADC\",5,0,75,45,0.6,SynergyTierData(2,6,7,6)),Top(32,\"Amumu\",\"JUNGLE\",523,\"Aphelios\",\"ADC\",9,0,45,27,0.6,SynergyTierData(3,14,13,20)),Top(32,\"Amumu\",\"JUNGLE\",22,\"Ashe\",\"ADC\",6,0,72,38,0.53,SynergyTierData(1,2,2,2))],[Top(32,\"Amumu\",\"JUNGLE\",412,\"Thresh\",\"SUPPORT\",1,0,76,46,0.61,SynergyTierData(1,4,4,1)),Top(32,\"Amumu\",\"JUNGLE\",111,\"Nautilus\",\"SUPPORT\",2,0,73,41,0.56,SynergyTierData(2,7,7,7)),Top(32,\"Amumu\",\"JUNGLE\",43,\"Karma\",\"SUPPORT\",9,0,33,18,0.55,SynergyTierData(2,10,10,10))])))"
+          }
+        ]
+      }
+    },
+    {
+      "champion": "YUUMI",
+      "position": "support",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "class LolGetChampionAnalysis: data\nclass Data: synergies\nclass Synergies: top,jungle,mid,adc\nclass Top: champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate,synergy_tier_data\nclass SynergyTierData: tier,rank,rank_prev,rank_prev_patch\n\nLolGetChampionAnalysis(Data(Synergies([Top(350,\"Yuumi\",\"SUPPORT\",54,\"Malphite\",\"TOP\",7,0,323,175,0.54,SynergyTierData(1,4,4,3)),Top(350,\"Yuumi\",\"SUPPORT\",41,\"Gangplank\",\"TOP\",8,0,318,168,0.53,SynergyTierData(1,3,3,1)),Top(350,\"Yuumi\",\"SUPPORT\",14,\"Sion\",\"TOP\",6,0,325,168,0.52,SynergyTierData(1,8,8,4))],[Top(350,\"Yuumi\",\"SUPPORT\",56,\"Nocturne\",\"JUNGLE\",8,0,356,198,0.56,SynergyTierData(3,20,20,3)),Top(350,\"Yuumi\",\"SUPPORT\",254,\"Vi\",\"JUNGLE\",5,0,424,220,0.52,SynergyTierData(2,13,13,8)),Top(350,\"Yuumi\",\"SUPPORT\",517,\"Sylas\",\"JUNGLE\",2,0,673,338,0.5,SynergyTierData(1,4,4,22))],[Top(350,\"Yuumi\",\"SUPPORT\",910,\"Hwei\",\"MID\",8,0,329,176,0.53,SynergyTierData(1,8,8,24)),Top(350,\"Yuumi\",\"SUPPORT\",4,\"Twisted Fate\",\"MID\",3,0,439,234,0.53,SynergyTierData(1,1,1,1)),Top(350,\"Yuumi\",\"SUPPORT\",134,\"Syndra\",\"MID\",6,0,380,197,0.52,SynergyTierData(1,5,5,22))],[Top(350,\"Yuumi\",\"SUPPORT\",895,\"Nilah\",\"ADC\",8,0,199,114,0.57,SynergyTierData(5,24,24,27)),Top(350,\"Yuumi\",\"SUPPORT\",18,\"Tristana\",\"ADC\",4,0,1114,618,0.55,SynergyTierData(3,15,14,15)),Top(350,\"Yuumi\",\"SUPPORT\",236,\"Lucian\",\"ADC\",2,0,1820,991,0.54,SynergyTierData(2,7,5,6))])))"
+          }
+        ]
+      }
+    }
+  ]
+}
