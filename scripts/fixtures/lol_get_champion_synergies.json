@@ -1,0 +1,17 @@
+{
+  "attemptedArguments": {
+    "champion": "AHRI",
+    "my_position": "mid",
+    "synergy_position": "jungle",
+    "lang": "en_US"
+  },
+  "usedFallback": false,
+  "response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "class LolGetChampionSynergies: champion,my_position,synergy_position,lang,data\nclass Data: synergies\nclass Synergie: champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate,synergy_tier_data\nclass SynergyTierData: tier,rank,rank_prev,rank_prev_patch\n\nLolGetChampionSynergies(\"Ahri\",\"mid\",\"jungle\",\"en_US\",Data([Synergie(103,\"Ahri\",\"MID\",64,\"Lee Sin\",\"JUNGLE\",1,0,6024,3179,0.53,SynergyTierData(0,1,1,1)),Synergie(103,\"Ahri\",\"MID\",254,\"Vi\",\"JUNGLE\",2,0,4508,2285,0.51,SynergyTierData(2,16,16,12)),Synergie(103,\"Ahri\",\"MID\",5,\"Xin Zhao\",\"JUNGLE\",3,0,3202,1676,0.52,SynergyTierData(1,3,3,3)),Synergie(103,\"Ahri\",\"MID\",104,\"Graves\",\"JUNGLE\",4,0,2386,1211,0.51,SynergyTierData(3,19,19,19)),Synergie(103,\"Ahri\",\"MID\",234,\"Viego\",\"JUNGLE\",5,0,1787,884,0.49,SynergyTierData(3,30,30,28)),Synergie(103,\"Ahri\",\"MID\",59,\"Jarvan IV\",\"JUNGLE\",6,0,1704,876,0.51,SynergyTierData(3,17,17,20)),Synergie(103,\"Ahri\",\"MID\",56,\"Nocturne\",\"JUNGLE\",7,0,1696,853,0.5,SynergyTierData(2,6,6,5)),Synergie(103,\"Ahri\",\"MID\",950,\"Naafiri\",\"JUNGLE\",8,0,1453,755,0.52,SynergyTierData(2,15,15,4)),Synergie(103,\"Ahri\",\"MID\",62,\"Wukong\",\"JUNGLE\",9,0,1340,688,0.51,SynergyTierData(2,11,11,34)),Synergie(103,\"Ahri\",\"MID\",126,\"Jayce\",\"JUNGLE\",10,0,1098,530,0.48,SynergyTierData(3,25,25,45))]))"
+      }
+    ]
+  }
+}
