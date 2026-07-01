@@ -2,7 +2,7 @@
 
 All notable changes to Draft Coach will be documented in this file.
 
-## 0.1.0 - Unreleased
+## 0.1.0 - 2026-07-01
 
 - Prepare Draft Coach for a public beta release.
 - Add release metadata, MIT license, public documentation, and CI/release workflow scaffolding.
