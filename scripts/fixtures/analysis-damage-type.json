@@ -1,0 +1,44 @@
+{
+  "note": "Phase 6 damage_type probe. OP.GG returns Data.damage_type as AD/AP/BOTH text.",
+  "desired_output_fields": [
+    "data.{damage_type,mythic_items}"
+  ],
+  "calls": [
+    {
+      "champion": "JINX",
+      "position": "adc",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "class LolGetChampionAnalysis: data\nclass Data: damage_type,mythic_items\n\nLolGetChampionAnalysis(Data(\"AD\",[]))"
+          }
+        ]
+      }
+    },
+    {
+      "champion": "ORIANNA",
+      "position": "mid",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "class LolGetChampionAnalysis: data\nclass Data: damage_type,mythic_items\n\nLolGetChampionAnalysis(Data(\"AP\",[]))"
+          }
+        ]
+      }
+    },
+    {
+      "champion": "JAYCE",
+      "position": "top",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "class LolGetChampionAnalysis: data\nclass Data: damage_type,mythic_items\n\nLolGetChampionAnalysis(Data(\"AD\",[]))"
+          }
+        ]
+      }
+    }
+  ]
+}
