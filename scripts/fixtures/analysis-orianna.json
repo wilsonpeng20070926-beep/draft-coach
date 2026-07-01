@@ -1,0 +1,12 @@
+{
+  "note": "Role-scoped synergy partners from lol_get_champion_analysis; rows are data.synergies.jungle[].",
+  "anchor": "Nocturne appears as a listed jungle partner with >2k games.",
+  "response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "class LolGetChampionAnalysis: data\nclass Data: synergies\nclass Synergies: jungle\nclass Jungle: champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate,synergy_tier_data\nclass SynergyTierData: tier,rank,rank_prev,rank_prev_patch\n\nLolGetChampionAnalysis(Data(Synergies([Jungle(61,\"Orianna\",\"MID\",64,\"Lee Sin\",\"JUNGLE\",1,0,3821,1991,0.52,SynergyTierData(0,1,1,1)),Jungle(61,\"Orianna\",\"MID\",56,\"Nocturne\",\"JUNGLE\",3,0,2601,1341,0.52,SynergyTierData(2,6,6,5)),Jungle(61,\"Orianna\",\"MID\",62,\"Wukong\",\"JUNGLE\",8,0,1175,594,0.51,SynergyTierData(2,11,11,34))])))"
+      }
+    ]
+  }
+}
