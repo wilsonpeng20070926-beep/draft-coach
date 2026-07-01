@@ -1,0 +1,12 @@
+{
+  "note": "Role-scoped synergy partners from lol_get_champion_analysis; rows are data.synergies.jungle[].",
+  "anchor": "Nocturne appears with tiny sample only; scoring should suppress this chip.",
+  "response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "class LolGetChampionAnalysis: data\nclass Data: synergies\nclass Synergies: jungle\nclass Jungle: champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate,synergy_tier_data\nclass SynergyTierData: tier,rank,rank_prev,rank_prev_patch\n\nLolGetChampionAnalysis(Data(Synergies([Jungle(92,\"Riven\",\"MID\",254,\"Vi\",\"JUNGLE\",7,0,19,12,0.63,SynergyTierData(2,16,16,12)),Jungle(92,\"Riven\",\"MID\",56,\"Nocturne\",\"JUNGLE\",6,0,22,13,0.59,SynergyTierData(2,6,6,5)),Jungle(92,\"Riven\",\"MID\",517,\"Sylas\",\"JUNGLE\",3,0,30,17,0.57,SynergyTierData(2,7,7,8))])))"
+      }
+    ]
+  }
+}
