@@ -1,0 +1,250 @@
+[
+  {
+    "name": "lol_get_champion_analysis",
+    "description": "Returns detailed champion stats (win/pick/ban rates), optimal builds (items, runes, skills, spells), skill combos, counter matchups, and team synergies for a specific champion and position. MUST call when user mentions any champion, asks for item/skill recommendations, gameplay tips, or matchup strategies. Counter picks available in weak_counters field. Infer position from context if not specified.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "game_mode": {
+          "description": "Game mode",
+          "enum": [
+            "ranked",
+            "flex",
+            "urf",
+            "aram",
+            "nexus_blitz"
+          ],
+          "type": "string"
+        },
+        "champion": {
+          "description": "Champion name in UPPER_SNAKE_CASE Examples: ANNIE, OLAF, GALIO",
+          "type": "string"
+        },
+        "position": {
+          "description": "Lane position",
+          "enum": [
+            "all",
+            "none",
+            "top",
+            "mid",
+            "jungle",
+            "adc",
+            "support"
+          ],
+          "type": "string"
+        },
+        "lang": {
+          "description": "Locale code Examples: ar_AE, cs_CZ, de_DE",
+          "default": "en_US",
+          "type": "string"
+        },
+        "desired_output_fields": {
+          "title": "Output fields to extract",
+          "description": "Select ONLY from fields below. This is a CLOSED SET. Do NOT invent new field names.\n\nAvailable fields:\n- champion\n- data.boots.{ids[],ids_names[],pick_rate,play,win}\n- data.core_items.{ids[],ids_names[],pick_rate,play,win}\n- data.fifth_items[].{ids[],ids_names[],pick_rate,play,win}\n- data.fourth_items[].{ids[],ids_names[],pick_rate,play,win}\n- data.last_items[].{ids[],ids_names[],pick_rate,play,win}\n- data.runes.{id,pick_rate,play,primary_page_id,primary_page_name,primary_rune_ids[],primary_rune_names[],secondary_page_id,secondary_page_name,secondary_rune_ids[],secondary_rune_names[],stat_mod_ids[],stat_mod_names[],win}\n- data.sixth_items[].{ids[],ids_names[],pick_rate,play,win}\n- data.skill_combos[].{name,video_url}\n- data.skill_masteries.builds[].{order[],pick_rate,play,win}\n- data.skill_masteries.{ids[],pick_rate,play,win}\n- data.skills.{order[],pick_rate,play,win}\n- data.starter_items.{ids[],ids_names[],pick_rate,play,win}\n- data.strong_counters[].{champion_id,champion_name,play,win,win_rate}\n- data.summary.average_stats.tier_data.{rank,rank_prev,rank_prev_patch,tier}\n- data.summary.average_stats.{ban_rate,kda,pick_rate,play,rank,tier,win_rate}\n- data.summary.positions[].counters[].{champion_id,champion_name,play,win}\n- data.summary.positions[].name\n- data.summary.positions[].roles[].name\n- data.summary.positions[].roles[].stats.{play,role_rate,win,win_rate}\n- data.summary.positions[].stats.tier_data.{rank,rank_prev,rank_prev_patch,tier}\n- data.summary.positions[].stats.{ban_rate,kda,pick_rate,play,role_rate,win_rate}\n- data.summary.{id,is_rip,is_rotation,roles}\n- data.summoner_spells.{ids[],ids_names[],pick_rate,play,win}\n- data.synergies.adc[].synergy_tier_data.{rank,rank_prev,rank_prev_patch,tier}\n- data.synergies.adc[].{champion_id,champion_name,play,position,score,score_rank,synergy_champion_id,synergy_champion_name,synergy_position,win,win_rate}\n- data.synergies.jungle[].synergy_tier_data.{rank,rank_prev,rank_prev_patch,tier}\n- data.synergies.jungle[].{champion_id,champion_name,play,position,score,score_rank,synergy_champion_id,synergy_champion_name,synergy_position,win,win_rate}\n- data.synergies.mid[].synergy_tier_data.{rank,rank_prev,rank_prev_patch,tier}\n- data.synergies.mid[].{champion_id,champion_name,play,position,score,score_rank,synergy_champion_id,synergy_champion_name,synergy_position,win,win_rate}\n- data.synergies.support[].synergy_tier_data.{rank,rank_prev,rank_prev_patch,tier}\n- data.synergies.support[].{champion_id,champion_name,play,position,score,score_rank,synergy_champion_id,synergy_champion_name,synergy_position,win,win_rate}\n- data.trends.ban.{created_at,rank,rate,version}\n- data.trends.pick.{created_at,rank,rate,version}\n- data.trends.win.{created_at,rank,rate,version}\n- data.trends.{total_position_rank,total_rank}\n- data.weak_counters[].{champion_id,champion_name,play,win,win_rate}\n- data.{damage_type,mythic_items}\n- position\n\nField descriptions:\n- mythic_items: Mythic tier items (legendary grade, one per build)\n- strong_counters: Champions that counter me (my win rate < 50% against them)\n- weak_counters: Champions I counter (my win rate > 50% against them)\n- counters_meta: Optional metadata about counter sample sufficiency. Present only when strong_counters or weak_counters are empty due to insufficient matchup sample; include this field when querying counters so empty-result cases are explained instead of silent.\n- damage_type: Champion damage type (AD=Attack Damage, AP=Ability Power, BOTH=Hybrid)\n- skill_combos: Recommended champion skill combos with demo video links\n- skill_masteries: Priority order for maxing abilities (Q/W/E)",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "game_mode",
+        "champion",
+        "position",
+        "desired_output_fields"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "lol_get_champion_synergies",
+    "description": "Returns synergy recommendations (win rate + role fit) for your champion and the ally lane you specify.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "champion": {
+          "description": "Your champion Examples: ANNIE, OLAF, GALIO",
+          "type": "string"
+        },
+        "my_position": {
+          "description": "Your position",
+          "enum": [
+            "all",
+            "none",
+            "top",
+            "mid",
+            "jungle",
+            "adc",
+            "support"
+          ],
+          "type": "string"
+        },
+        "synergy_position": {
+          "description": "The position you want synergy recommendations for (teammate position)",
+          "enum": [
+            "all",
+            "none",
+            "top",
+            "mid",
+            "jungle",
+            "adc",
+            "support"
+          ],
+          "type": "string"
+        },
+        "lang": {
+          "description": "Locale code Examples: ar_AE, cs_CZ, de_DE",
+          "default": "en_US",
+          "type": "string"
+        },
+        "desired_output_fields": {
+          "title": "Output fields to extract",
+          "description": "Select ONLY from fields below. This is a CLOSED SET. Do NOT invent new field names.\n\nAvailable fields:\n- champion\n- data.synergies[].synergy_tier_data.{rank,rank_prev,rank_prev_patch,tier}\n- data.synergies[].{champion_id,champion_name,play,position,score,score_rank,synergy_champion_id,synergy_champion_name,synergy_position,win,win_rate}\n- lang\n- my_position\n- synergy_position\n\nField descriptions:\n- synergies.*.synergy_tier_data.tier: Synergy tier (0=OP, 1=S, 2=A, 3=B, 4=C)",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "champion",
+        "my_position",
+        "synergy_position",
+        "desired_output_fields"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "lol_get_lane_matchup_guide",
+    "description": "Provides lane matchup guidance for your champion versus a named opponent, including position-specific tips, runes, and item timings.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "lang": {
+          "description": "Locale code Examples: ar_AE, cs_CZ, de_DE",
+          "default": "en_US",
+          "type": "string"
+        },
+        "position": {
+          "description": "Lane position (top, mid, jungle, adc, support)",
+          "enum": [
+            "all",
+            "none",
+            "top",
+            "mid",
+            "jungle",
+            "adc",
+            "support"
+          ],
+          "type": "string"
+        },
+        "my_champion": {
+          "description": "Champion name in UPPER_SNAKE_CASE Examples: ANNIE, OLAF, GALIO",
+          "type": "string"
+        },
+        "opponent_champion": {
+          "description": "Champion name in UPPER_SNAKE_CASE Examples: ANNIE, OLAF, GALIO",
+          "type": "string"
+        }
+      },
+      "required": [
+        "position",
+        "my_champion",
+        "opponent_champion"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "lol_list_champions",
+    "description": "Returns every champion's id, key, name, and release date in the requested language.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "lang": {
+          "description": "Locale code Examples: ar_AE, cs_CZ, de_DE",
+          "default": "en_US",
+          "type": "string"
+        },
+        "desired_output_fields": {
+          "title": "Output fields to extract",
+          "description": "Select ONLY from fields below. This is a CLOSED SET. Do NOT invent new field names.\n\nAvailable fields:\n- data.champions[].{champion_id,key,name,release_date}\n- lang\n\nField descriptions:\n- key: Champion key (internal code name, e.g., MonkeyKing for Wukong)",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "desired_output_fields"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "lol_list_lane_meta_champions",
+    "description": "Returns lane-by-lane champion tiers with win/pick/ban rates, KDA, and tier rankings. Tier 1 champions are OP and easy to play - recommend them for strong picks. Filter by position or use \"all\" for every lane.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "lang": {
+          "description": "Locale code Examples: ar_AE, cs_CZ, de_DE",
+          "default": "en_US",
+          "type": "string"
+        },
+        "position": {
+          "description": "Lane position (top, mid, jungle, adc, support)",
+          "default": "all",
+          "enum": [
+            "all",
+            "none",
+            "top",
+            "mid",
+            "jungle",
+            "adc",
+            "support"
+          ],
+          "type": "string"
+        },
+        "desired_output_fields": {
+          "title": "Output fields to extract",
+          "description": "Select ONLY from fields below. This is a CLOSED SET. Do NOT invent new field names.\n\nAvailable fields:\n- data.positions.adc[].{ban_rate,champion,is_rip,kda,kill,pick_rate,play,rank,rank_prev,rank_prev_patch,role_rate,tier,win,win_rate}\n- data.positions.jungle[].{ban_rate,champion,is_rip,kda,kill,pick_rate,play,rank,rank_prev,rank_prev_patch,role_rate,tier,win,win_rate}\n- data.positions.mid[].{ban_rate,champion,is_rip,kda,kill,pick_rate,play,rank,rank_prev,rank_prev_patch,role_rate,tier,win,win_rate}\n- data.positions.support[].{ban_rate,champion,is_rip,kda,kill,pick_rate,play,rank,rank_prev,rank_prev_patch,role_rate,tier,win,win_rate}\n- data.positions.top[].{ban_rate,champion,is_rip,kda,kill,pick_rate,play,rank,rank_prev,rank_prev_patch,role_rate,tier,win,win_rate}\n- lang\n- position_filter\n\nField descriptions:\n- position.*.is_rip: Whether champion is considered RIP (weak/unplayable) in this position\n- position.*.role_rate: Percentage of games this champion plays in this role vs other roles\n- position.*.kda: KDA ratio (Kills + Assists / Deaths)\n- position.*.tier: Tier ranking (1=OP, 2=Strong, 3=Good, 4=Average, 5=Weak)",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "desired_output_fields"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  }
+]
