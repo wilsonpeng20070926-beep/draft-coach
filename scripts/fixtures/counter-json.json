@@ -1,0 +1,11 @@
+{
+  "note": "OP.GG currently returns typed text for selected counter fields.",
+  "response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "class LolGetChampionAnalysis: data\nclass Data: weak_counters,strong_counters\nclass WeakCounter: champion_id,champion_name,play,win,win_rate\n\nLolGetChampionAnalysis(Data([WeakCounter(55,\"Katarina\",7128,3452,0.52),WeakCounter(1,\"Annie\",4458,2148,0.52),WeakCounter(91,\"Talon\",2348,1129,0.52)],[WeakCounter(268,\"Azir\",1636,954,0.58),WeakCounter(777,\"Yone\",4768,2599,0.55),WeakCounter(80,\"Pantheon\",599,327,0.55)]))"
+      }
+    ]
+  }
+}
