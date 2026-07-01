@@ -7,10 +7,11 @@ const mainEntry = join(process.cwd(), "out", "main", "index.js");
 
 await access(mainEntry);
 
-const child = spawn(electron, [mainEntry], {
+const child = spawn(electron, ["--no-sandbox", mainEntry], {
   env: {
     ...process.env,
     DRAFT_COACH_SMOKE: "1",
+    ELECTRON_DISABLE_SANDBOX: "1",
     ELECTRON_DISABLE_SECURITY_WARNINGS: "1",
   },
   stdio: ["ignore", "pipe", "pipe"],
