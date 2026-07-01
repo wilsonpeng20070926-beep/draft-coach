@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Build and release output
+out/
+release/
+dist/
+coverage/
+.nyc_output/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+*.mobileprovision
+*.provisionprofile
+
+# Local tool/editor state
+.DS_Store
+.claude/
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+*.temp
+
+# Logs and caches
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.cache/
+.vite/
+
+# Local continuation notes. Keep public release snapshots sanitized.
+handoff.md
