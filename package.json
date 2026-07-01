@@ -67,7 +67,7 @@
       "buildResources": "build",
       "output": "release"
     },
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "artifactName": "draft-coach-${version}-${os}-${arch}.${ext}",
     "files": [
       "out/**"
     ],
