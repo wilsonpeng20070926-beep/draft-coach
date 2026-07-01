@@ -1,0 +1,101 @@
+{
+  "name": "draft-coach",
+  "version": "0.1.0",
+  "description": "League of Legends champ-select draft assistant.",
+  "author": "Draft Coach maintainers",
+  "license": "MIT",
+  "homepage": "https://github.com/wilsonpeng20070926-beep/League-smart#readme",
+  "bugs": {
+    "url": "https://github.com/wilsonpeng20070926-beep/League-smart/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wilsonpeng20070926-beep/League-smart.git"
+  },
+  "keywords": [
+    "league-of-legends",
+    "champ-select",
+    "draft",
+    "electron",
+    "react"
+  ],
+  "main": "out/main/index.js",
+  "engines": {
+    "node": ">=20 <25"
+  },
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "npm run typecheck && electron-vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "security:scan": "node scripts/scan-public-snapshot.mjs",
+    "smoke:electron": "npm run build && node scripts/smoke-electron.mjs",
+    "dist": "npm run build && electron-builder --publish never",
+    "dist:dir": "npm run build && electron-builder --dir --publish never",
+    "dist:win": "npm run build && electron-builder --win nsis --publish never",
+    "dist:mac": "npm run build && electron-builder --mac zip --publish never",
+    "dist:mac:dmg": "npm run build && electron-builder --mac dmg --publish never",
+    "release:assert-artifacts": "node scripts/assert-release-artifacts.mjs release",
+    "release:checksums": "node scripts/write-checksums.mjs release"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "league-connect": "^5.5.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^39.8.6",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "tsx": "^4.22.3",
+    "typescript": "^5.4.5",
+    "vite": "^7.3.6",
+    "vitest": "^4.1.9"
+  },
+  "build": {
+    "appId": "io.github.draftcoach.app",
+    "productName": "Draft Coach",
+    "electronDist": "node_modules/electron/dist",
+    "electronVersion": "39.8.6",
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "files": [
+      "out/**"
+    ],
+    "extraMetadata": {
+      "name": "draft-coach"
+    },
+    "mac": {
+      "category": "public.app-category.utilities",
+      "identity": null,
+      "target": [
+        "zip"
+      ],
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    }
+  }
+}
