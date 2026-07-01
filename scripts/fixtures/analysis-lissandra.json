@@ -1,0 +1,12 @@
+{
+  "note": "Role-scoped synergy partners from lol_get_champion_analysis; rows are data.synergies.jungle[].",
+  "anchor": "Nocturne is absent in the jungle partner list; this is the unrelated-control fixture.",
+  "response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "class LolGetChampionAnalysis: data\nclass Data: synergies\nclass Synergies: jungle\nclass Jungle: champion_id,champion_name,position,synergy_champion_id,synergy_champion_name,synergy_position,score_rank,score,play,win,win_rate,synergy_tier_data\nclass SynergyTierData: tier,rank,rank_prev,rank_prev_patch\n\nLolGetChampionAnalysis(Data(Synergies([Jungle(127,\"Lissandra\",\"MID\",64,\"Lee Sin\",\"JUNGLE\",1,0,2525,1412,0.56,SynergyTierData(0,1,1,1)),Jungle(127,\"Lissandra\",\"MID\",62,\"Wukong\",\"JUNGLE\",9,0,581,318,0.55,SynergyTierData(2,11,11,34)),Jungle(127,\"Lissandra\",\"MID\",5,\"Xin Zhao\",\"JUNGLE\",2,0,1392,751,0.54,SynergyTierData(1,3,3,3))])))"
+      }
+    ]
+  }
+}
