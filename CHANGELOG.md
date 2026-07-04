@@ -2,6 +2,11 @@
 
 All notable changes to Draft Coach will be documented in this file.
 
+## 0.1.1 - 2026-07-04
+
+- Ad-hoc sign macOS beta builds so Gatekeeper no longer treats the bundle as damaged because of an invalid resource seal.
+- Document the remaining unsigned and unnotarized macOS beta install warning.
+
 ## 0.1.0 - 2026-07-01
 
 - Prepare Draft Coach for a public beta release.
