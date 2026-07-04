@@ -1,6 +1,6 @@
 {
   "name": "draft-coach",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "League of Legends champ-select draft assistant.",
   "author": "Draft Coach maintainers",
   "license": "MIT",
@@ -76,7 +76,7 @@
     },
     "mac": {
       "category": "public.app-category.utilities",
-      "identity": null,
+      "identity": "-",
       "target": [
         "zip"
       ],
