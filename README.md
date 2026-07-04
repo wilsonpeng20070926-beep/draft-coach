@@ -8,7 +8,7 @@ The current app includes meta anchoring, lane-counter signals, team-counter warn
 
 ## Status
 
-- Release target: `v0.1.0` public beta.
+- Current release: `v0.1.1` public beta.
 - Supported app targets: Windows and macOS desktop builds.
 - Developer runtime: Node 20 LTS.
 - License: MIT.
@@ -32,12 +32,12 @@ The first public release should be published from a sanitized repository as a Gi
 
 Expected release artifacts:
 
-- `Draft Coach-0.1.0-win-x64.exe`
-- `Draft Coach-0.1.0-mac-arm64.zip`
+- `draft-coach-0.1.1-win-x64.exe`
+- `draft-coach-0.1.1-mac-arm64.zip`
 - `SHA256SUMS-draft-coach-windows.txt`
 - `SHA256SUMS-draft-coach-macos.txt`
 
-Until signed builds are available, Windows SmartScreen and macOS Gatekeeper may warn that the app is from an unidentified developer. A signed/notarized macOS DMG is planned for a later release path; v0.1.0 uses a ZIP archive.
+Until Developer ID signed and notarized builds are available, Windows SmartScreen and macOS Gatekeeper may warn that the app is from an unidentified developer. A signed/notarized macOS DMG is planned for a later release path; v0.1.1 uses an ad-hoc signed ZIP archive.
 
 ## Quick Start For Users
 
