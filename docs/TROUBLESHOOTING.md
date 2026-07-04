@@ -31,6 +31,24 @@ Weight-only settings changes use the latest cached scored candidate pool. Draft 
 
 Unsigned beta builds may trigger Windows SmartScreen or macOS Gatekeeper. Public releases should be signed and notarized when certificates are available. If a release is unsigned, verify the published SHA-256 checksum before installing.
 
+### macOS Says Draft Coach Is Damaged
+
+If macOS says `"Draft Coach" is damaged and can't be opened`, you probably downloaded an unsigned beta ZIP with Safari quarantine metadata attached.
+
+First, make sure you downloaded Draft Coach from the official GitHub Release and verify the SHA-256 checksum. Then remove quarantine from the unzipped app:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Draft Coach.app"
+```
+
+If the app is still in Downloads, use the app's actual path instead:
+
+```bash
+xattr -dr com.apple.quarantine "$HOME/Downloads/Draft Coach.app"
+```
+
+The v0.1.1 macOS beta ZIP is ad-hoc signed to avoid the invalid bundle-seal issue from v0.1.0, but it is still not Developer ID signed or notarized.
+
 ## Reporting Bugs
 
 Open a GitHub Issue and include:
