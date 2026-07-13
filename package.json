@@ -36,6 +36,7 @@
     "security:scan": "node scripts/scan-public-snapshot.mjs",
     "evaluation:test": "vitest run test/draftReplayEvaluation.test.ts test/engineReplayAdapter.test.ts test/scenarioEvaluation.test.ts test/evaluationConfigurations.test.ts test/configurationComparisonEngine.test.ts test/recommendationPerformance.test.ts test/proResilienceMatrix.test.ts",
     "release:policy:report": "node scripts/check-release-policy.mjs report",
+    "release:policy:preview": "node scripts/check-release-policy.mjs preview",
     "release:policy:assert": "node scripts/check-release-policy.mjs public",
     "release:policy:commercial": "node scripts/check-release-policy.mjs commercial",
     "smoke:electron": "npm run build && node scripts/smoke-electron.mjs",

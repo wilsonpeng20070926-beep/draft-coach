@@ -1,6 +1,19 @@
 {
-  "schemaVersion": 1,
-  "reviewedAt": "2026-07-11",
+  "schemaVersion": 2,
+  "reviewedAt": "2026-07-13",
+  "uncertifiedPreview": {
+    "status": "owner-authorized",
+    "ownerAuthorizedAt": "2026-07-13",
+    "requiredReleaseType": "prerelease",
+    "requiredTagPattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+-preview\\.[0-9]+$",
+    "acknowledgedGateIds": [
+      "riot-product-registration",
+      "leaguepedia-snapshot-redistribution",
+      "opgg-public-use-review"
+    ],
+    "summary": "The repository owner explicitly authorized a clearly labeled friend-preview prerelease while the three external reviews remain pending. This does not approve or close any public-release gate.",
+    "requiredDisclosure": "Riot registration and the OP.GG and Leaguepedia/Fandom reviews remain unresolved. This build is an uncertified, unsigned friend preview and must not be represented as approved, endorsed, certified, or production-ready."
+  },
   "publicRelease": [
     {
       "id": "riot-product-registration",

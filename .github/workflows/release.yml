@@ -40,8 +40,14 @@ jobs:
       - name: Test release build
         run: npm run build
 
-      - name: Enforce public-release policy gates
-        run: npm run release:policy:assert
+      - name: Enforce release-channel policy gates
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_NAME" == *-preview.* ]]; then
+            npm run release:policy:preview
+          else
+            npm run release:policy:assert
+          fi
 
       - name: Package
         run: ${{ matrix.command }}
@@ -69,6 +75,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout release documentation
+        uses: actions/checkout@v7
+
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
@@ -81,8 +90,32 @@ jobs:
             mv "$file" "$(dirname "$file")/SHA256SUMS-${artifact_dir}.txt"
           done
 
+      - name: Write release disclosure
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_NAME" == *-preview.* ]]; then
+            cat > release-notes.md <<'EOF'
+          > [!WARNING]
+          > This is an uncertified, unsigned friend preview. Riot product registration and the OP.GG and Leaguepedia/Fandom reviews are still pending. Draft Coach is not approved, endorsed, certified, or production-ready.
+
+          Draft Coach is a read-only Windows and macOS companion for League of Legends champ select. It presents multiple explainable recommendations and never selects, hovers, locks, sends chat, or changes gameplay on the user's behalf.
+
+          Professional snapshot fetching and publishing remain disabled. Windows SmartScreen and macOS Gatekeeper may warn because these artifacts are not commercially signed or Apple-notarized.
+
+          Download the installer/archive for your platform and the matching SHA-256 checksum file below.
+          EOF
+          else
+            cat > release-notes.md <<'EOF'
+          Draft Coach stable release candidate. The stable release policy gate passed for this tag.
+          EOF
+          fi
+
       - name: Publish release assets
         uses: softprops/action-gh-release@v3
         with:
-          draft: true
+          name: ${{ contains(github.ref_name, '-preview.') && format('Draft Coach {0} Uncertified Friend Preview', github.ref_name) || format('Draft Coach {0}', github.ref_name) }}
+          body_path: release-notes.md
+          draft: ${{ !contains(github.ref_name, '-preview.') }}
+          prerelease: ${{ contains(github.ref_name, '-preview.') }}
+          make_latest: ${{ contains(github.ref_name, '-preview.') && 'false' || 'true' }}
           files: artifacts/**/*

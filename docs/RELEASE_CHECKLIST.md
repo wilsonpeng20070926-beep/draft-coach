@@ -4,6 +4,19 @@ Use this checklist before publishing binaries or materially expanding public dis
 
 Use [Release Approval Requests](RELEASE_APPROVAL_REQUESTS.md) for the copy-ready Riot, Leaguepedia/Fandom, and OP.GG request text and evidence fields.
 
+## Uncertified Friend Preview
+
+This channel is an explicit owner-authorized exception for tags matching `vX.Y.Z-preview.N`. It does not close or weaken the stable public-release gates.
+
+- [ ] Confirm the release is marked **Pre-release**, never Latest or stable.
+- [ ] Include the required disclosure from `docs/RELEASE_POLICY_STATUS.json` prominently in the release notes.
+- [ ] Do not describe the preview as Riot-approved, endorsed, registered, certified, or production-ready.
+- [ ] Keep `PRO_SNAPSHOT_FETCH_ENABLED` and `PRO_SNAPSHOT_PUBLISH_ENABLED` unset.
+- [ ] Keep professional snapshot assets out of the release.
+- [ ] `npm run release:policy:preview`
+- [ ] Use a tag matching the recorded preview tag pattern.
+- [ ] Publish platform checksums and unsigned-build warnings.
+
 ## Safety
 
 - [ ] Publish from a fresh sanitized repository snapshot.

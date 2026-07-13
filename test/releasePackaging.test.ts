@@ -89,4 +89,17 @@ describe("release packaging", () => {
       "if: ${{ vars.PRO_SNAPSHOT_PUBLISH_ENABLED == 'true' }}",
     );
   });
+
+  it("publishes only explicitly labeled previews while stable tags remain gated", async () => {
+    const workflow = (
+      await readFile(join(process.cwd(), ".github/workflows/release.yml"), "utf8")
+    ).replace(/\r\n/g, "\n");
+
+    expect(workflow).toContain('if [[ "$GITHUB_REF_NAME" == *-preview.* ]]');
+    expect(workflow).toContain("npm run release:policy:preview");
+    expect(workflow).toContain("npm run release:policy:assert");
+    expect(workflow).toContain("prerelease: ${{ contains(github.ref_name, '-preview.') }}");
+    expect(workflow).toContain("draft: ${{ !contains(github.ref_name, '-preview.') }}");
+    expect(workflow).toContain("This is an uncertified, unsigned friend preview");
+  });
 });
