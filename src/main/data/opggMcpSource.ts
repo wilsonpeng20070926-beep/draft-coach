@@ -1,6 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { ChampionCatalog } from "../catalog/championCatalog";
+import { APP_VERSION } from "../../shared/appInfo";
 import type { DamageStyle } from "../../shared/championAttributes";
 import type { ChampionRef, Role } from "../../shared/types";
 import type {
@@ -398,7 +399,7 @@ export class OpggMcpSource implements MetaDataSource {
   }
 
   private async connect(): Promise<Client> {
-    const client = new Client({ name: "draft-coach", version: "0.1.0" });
+    const client = new Client({ name: "draft-coach", version: APP_VERSION });
     const transport = new StreamableHTTPClientTransport(new URL(this.endpoint));
     await client.connect(transport);
     return client;

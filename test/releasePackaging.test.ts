@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
+import { APP_VERSION } from "../src/shared/appInfo";
 
 const execFileAsync = promisify(execFile);
 const directories: string[] = [];
@@ -17,6 +18,14 @@ afterEach(async () => {
 });
 
 describe("release packaging", () => {
+  it("keeps the displayed app version aligned with package metadata", async () => {
+    const packageJson = JSON.parse(
+      await readFile(join(process.cwd(), "package.json"), "utf8"),
+    ) as { version: string };
+
+    expect(APP_VERSION).toBe(packageJson.version);
+  });
+
   it("checksums only the current platform artifact and detects tampering", async () => {
     const directory = await mkdtemp(join(tmpdir(), "draft-coach-release-"));
     directories.push(directory);
@@ -56,7 +65,7 @@ describe("release packaging", () => {
     expect(workflow).toContain("npm run dist:dir");
     expect(workflow).toContain("DRAFT_COACH_SMOKE");
     expect(workflow).toContain("Get-AuthenticodeSignature");
-    expect(workflow).toContain("actions/upload-artifact@v4");
+    expect(workflow).toContain("actions/upload-artifact@v7");
     expect(workflow).not.toContain("softprops/action-gh-release");
     expect(workflow).not.toContain("npm run release:policy:assert");
   });

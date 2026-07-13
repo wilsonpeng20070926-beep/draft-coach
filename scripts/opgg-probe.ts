@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { ReadableStream, TransformStream } from "node:stream/web";
 import { fileURLToPath } from "node:url";
 import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { APP_VERSION } from "../src/shared/appInfo";
 
 const endpoint = "https://mcp-api.op.gg/mcp";
 const toolNames = [
@@ -145,7 +146,7 @@ async function main(): Promise<void> {
   const { StreamableHTTPClientTransport } = await import(
     "@modelcontextprotocol/sdk/client/streamableHttp.js"
   );
-  const client = new Client({ name: "draft-coach-opgg-probe", version: "0.1.0" });
+  const client = new Client({ name: "draft-coach-opgg-probe", version: APP_VERSION });
   const transport = new StreamableHTTPClientTransport(new URL(endpoint));
   await client.connect(transport);
 
