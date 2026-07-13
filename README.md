@@ -10,7 +10,7 @@ The current app includes meta anchoring, lane-counter signals, team-counter warn
 
 ## Status
 
-- Current engineering version: `v0.2.0` (unreleased); public release is blocked pending the recorded policy approvals.
+- Current engineering version: `v0.2.0`; an explicitly uncertified friend-preview channel is available while stable public release remains blocked pending the recorded policy approvals.
 - Public product demonstration: deployed and available for external review.
 - Supported app targets: Windows and macOS desktop builds.
 - Developer runtime: Node 24 (see `.nvmrc`).
@@ -33,7 +33,7 @@ The current app includes meta anchoring, lane-counter signals, team-counter warn
 
 ## Download
 
-The next public release should be published from a sanitized repository as a GitHub Release only after `npm run release:policy:assert` passes. The existing `v0.1.1` prerelease predates Draft Intelligence v2 and should be treated as a historical beta, not the current build.
+The owner-authorized `v0.2.0-preview.1` release is an uncertified prerelease for friend testing. It must remain visibly labeled as unregistered, unapproved, unsigned, and not production-ready. Stable `v0.2.0` publication remains blocked until `npm run release:policy:assert` passes. The existing `v0.1.1` prerelease predates Draft Intelligence v2 and should be treated as a historical beta.
 
 Expected release artifacts:
 
@@ -46,7 +46,7 @@ Until Developer ID signed and notarized builds are available, Windows SmartScree
 
 ## Quick Start For Users
 
-1. After a release is approved, download the installer or archive for your operating system from the GitHub Release.
+1. Download the installer or archive for your operating system from the appropriate GitHub Release, and read its certification and signing warning before opening it.
 2. Install or unzip Draft Coach.
 3. Open the League client and log in.
 4. Launch Draft Coach.

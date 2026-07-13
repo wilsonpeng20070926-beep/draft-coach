@@ -2,9 +2,9 @@
 
 Review date: 2026-07-11
 
-Release recommendation: **blocked for public release; suitable for controlled local beta evaluation**.
+Release recommendation: **stable public release blocked; suitable for the explicitly disclosed uncertified friend-preview channel and controlled local beta evaluation**.
 
-The implementation gates are green. Public distribution remains blocked until the machine-readable policy status records Riot product registration plus Leaguepedia and OP.GG public-use/redistribution reviews. This is an external approval boundary, not an engine failure.
+The implementation gates are green. Stable and broadly promoted public distribution remains blocked until the machine-readable policy status records Riot product registration plus Leaguepedia and OP.GG public-use/redistribution reviews. The owner-authorized preview exception does not close those gates; it permits only a clearly labeled prerelease carrying the recorded disclosure. This is an external approval boundary, not an engine failure.
 
 ## Evidence summary
 

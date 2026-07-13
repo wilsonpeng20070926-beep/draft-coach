@@ -98,4 +98,4 @@ For each response:
 2. Add focused regression coverage for enforceable technical conditions.
 3. Update `docs/RELEASE_POLICY_STATUS.json` with the review date, status, a non-sensitive summary, owner action, and authoritative public policy/contact URLs.
 4. Run `npm run release:policy:report` and the full release checklist.
-5. Run `npm run release:policy:assert`. Do not tag or publish `v0.2.0` until it exits successfully.
+5. Run `npm run release:policy:assert`. Do not tag or publish stable `v0.2.0` until it exits successfully. A separately labeled owner-authorized `vX.Y.Z-preview.N` prerelease may use `npm run release:policy:preview`; it does not close any gate and must carry the recorded uncertified-preview disclosure.
