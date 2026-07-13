@@ -4,11 +4,14 @@ Draft Coach is a read-only desktop companion for League of Legends champ select.
 
 The current app includes meta anchoring, lane-counter signals, team-counter warnings, ally synergy, composition fit, weight presets, instant reranking when settings change, and an expandable `Why` view for each recommendation.
 
+[Explore the privacy-safe interactive product demonstration](https://draft-coach-wilson-demo.savory-heron-7495.chatgpt.site/). It uses synthetic data and makes no Riot, OP.GG, or Leaguepedia requests.
+
 > Draft Coach is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
 
 ## Status
 
 - Current engineering version: `v0.2.0` (unreleased); public release is blocked pending the recorded policy approvals.
+- Public product demonstration: deployed and available for external review.
 - Supported app targets: Windows and macOS desktop builds.
 - Developer runtime: Node 24 (see `.nvmrc`).
 - License: MIT.
