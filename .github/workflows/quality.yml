@@ -59,3 +59,34 @@ jobs:
 
       - name: Electron smoke
         run: xvfb-run -a npm run smoke:electron
+
+  product-demo:
+    name: Product demo lint, build, test, and audit
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: product-demo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: product-demo/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build and test
+        run: npm test
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
