@@ -28,7 +28,7 @@ describe("SynergyModule", () => {
   it("returns neutral when there are no locked allies", async () => {
     const module = createModule(new FakeMetaDataSource());
 
-    const contribution = await module.contribute(ahri, createDraft(), neutralCtx());
+    const contribution = await module.contribute(ahri, createDraft(), target(), neutralCtx());
 
     expect(contribution).toEqual({
       factor: "synergy",
@@ -52,6 +52,7 @@ describe("SynergyModule", () => {
       createDraft({
         allies: [player(0, "middle", null, true), player(1, "top", darius, false)],
       }),
+      target(),
       neutralCtx(),
     );
 
@@ -174,8 +175,9 @@ function createDraft(overrides: Partial<DraftState> = {}): DraftState {
     allies: [localPlayer],
     enemies: [],
     bans: [],
+    pickActions: [],
+    activeAllyPickCellIds: [],
     localPlayer,
-    laneOpponent: null,
     ...overrides,
   };
 }
@@ -188,9 +190,21 @@ function player(
 ): DraftPlayer {
   return {
     cellId,
+    side: "ally",
     role,
     champion,
+    pickState: champion ? "locked" : "empty",
     isLocalPlayer,
+  };
+}
+
+function target() {
+  return {
+    side: "ally" as const,
+    cellId: 0,
+    role: "middle" as const,
+    source: "automatic" as const,
+    purpose: "recommend" as const,
   };
 }
 

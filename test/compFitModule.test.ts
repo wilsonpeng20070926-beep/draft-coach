@@ -43,15 +43,20 @@ describe("CompFitModule", () => {
     ]);
   });
 
-  it("stays near zero when the candidate does not fill the active gap", () => {
+  it("emits traceable negative evidence for redundant damage", () => {
     const contribution = scoreCandidateCompFit(
       jinx,
       provider.getAttributes(jinx, "ad"),
       contextWithNeeds([{ kind: "ap", severity: 0.9 }], 0.8),
     );
 
-    expect(contribution.delta).toBe(0);
-    expect(contribution.reasons).toEqual([]);
+    expect(contribution.delta).toBeLessThan(0);
+    expect(contribution.reasons).toEqual([
+      expect.objectContaining({
+        text: "Adds more AD to an AD-heavy team",
+        polarity: "negative",
+      }),
+    ]);
   });
 
   it("returns zero when the ally team has no active needs", () => {
@@ -89,6 +94,7 @@ describe("CompFitModule", () => {
     const contribution = await module.contribute(
       gragas,
       createDraft({ localPlayer: player(0, "jungle", null, true) }),
+      target("jungle"),
       contextWithNeeds([{ kind: "ap", severity: 0.8 }], 0.8),
     );
 
@@ -119,8 +125,9 @@ function createDraft(overrides: Partial<DraftState> = {}): DraftState {
     allies: [localPlayer],
     enemies: [],
     bans: [],
+    pickActions: [],
+    activeAllyPickCellIds: [],
     localPlayer,
-    laneOpponent: null,
     ...overrides,
   };
 }
@@ -133,9 +140,21 @@ function player(
 ): DraftPlayer {
   return {
     cellId,
+    side: "ally",
     role,
     champion,
+    pickState: champion ? "locked" : "empty",
     isLocalPlayer,
+  };
+}
+
+function target(role: Role = "middle") {
+  return {
+    side: "ally" as const,
+    cellId: 0,
+    role,
+    source: "automatic" as const,
+    purpose: "recommend" as const,
   };
 }
 

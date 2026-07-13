@@ -9,12 +9,16 @@ import {
   mergeAppConfig,
 } from "../../shared/config";
 import { APP_NAME, APP_VERSION, RIOT_DISCLAIMER } from "../../shared/appInfo";
+import type { ProDataStatus } from "../../shared/proData";
+import { ProDataStatusPanel } from "./ProDataStatusPanel";
 
 interface SettingsPanelProps {
   config: AppConfig;
   saving: boolean;
   onChange: (patch: AppConfigPatch) => void;
   onClose: () => void;
+  proDataStatus: ProDataStatus | null;
+  onRefreshProData: () => void;
 }
 
 const presets: Array<{ label: string; weights: AppConfig["weights"] }> = [
@@ -29,15 +33,20 @@ export function SettingsPanel({
   saving,
   onChange,
   onClose,
+  proDataStatus,
+  onRefreshProData,
 }: SettingsPanelProps): JSX.Element {
   const [draftConfig, setDraftConfig] = useState(config);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftConfigRef = useRef(config);
   const pendingPatchRef = useRef<AppConfigPatch | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
+  const [favoriteInput, setFavoriteInput] = useState(config.favoriteTeams.join(", "));
 
   useEffect(() => {
     draftConfigRef.current = config;
     setDraftConfig(config);
+    setFavoriteInput(config.favoriteTeams.join(", "));
   }, [config]);
 
   useEffect(
@@ -48,6 +57,10 @@ export function SettingsPanel({
     },
     [],
   );
+
+  useEffect(() => {
+    panelRef.current?.focus();
+  }, []);
 
   const updateDraft = (patch: AppConfigPatch, debounce = false): void => {
     const nextConfig = mergeAppConfig(draftConfigRef.current, patch);
@@ -81,10 +94,25 @@ export function SettingsPanel({
     draftConfig.weights.teamCounter +
     draftConfig.weights.synergy +
     draftConfig.weights.compFit;
+  const commitFavorites = (): void => {
+    updateDraft({ favoriteTeams: parseFavoriteTeams(favoriteInput) });
+  };
 
   return (
     <div className="settings-backdrop" role="presentation">
-      <aside className="settings-panel" aria-label="settings panel">
+      <aside
+        className="settings-panel"
+        aria-label="settings panel"
+        aria-modal="true"
+        role="dialog"
+        tabIndex={-1}
+        ref={panelRef}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            onClose();
+          }
+        }}
+      >
         <div className="settings-header">
           <div>
             <p className="eyebrow">Settings</p>
@@ -95,9 +123,54 @@ export function SettingsPanel({
           </button>
         </div>
 
+        <section className="settings-section" aria-label="professional evidence settings">
+          <div className="section-title">
+            <span>Professional evidence</span>
+            <strong>{draftConfig.proEvidenceEnabled ? "On" : "Off"}</strong>
+          </div>
+          <label className="toggle-row">
+            <span>Use professional data</span>
+            <input
+              type="checkbox"
+              checked={draftConfig.proEvidenceEnabled}
+              onChange={(event) =>
+                updateDraft({ proEvidenceEnabled: event.target.checked })
+              }
+            />
+          </label>
+          <WeightSlider
+            label="Pro influence"
+            value={draftConfig.proInfluence}
+            onChange={(value) => updateDraft({ proInfluence: value }, true)}
+          />
+          <label className="favorite-team-field">
+            <span>Favorite teams</span>
+            <input
+              type="text"
+              value={favoriteInput}
+              placeholder="T1, Bilibili Gaming"
+              aria-describedby="favorite-team-help"
+              onChange={(event) => setFavoriteInput(event.target.value)}
+              onBlur={commitFavorites}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.currentTarget.blur();
+                }
+              }}
+            />
+          </label>
+          <p className="settings-note" id="favorite-team-help">
+            Optional, comma-separated. Favorites shape Pro-inspired and simulator strategy context.
+          </p>
+          <ProDataStatusPanel
+            status={proDataStatus}
+            onRefresh={onRefreshProData}
+          />
+        </section>
+
         <section className="settings-section" aria-label="factor weights">
           <div className="section-title">
-            <span>Weights</span>
+            <span>Advanced ranked balance</span>
             {saving ? <strong>Saving</strong> : null}
           </div>
           <div className="weight-cluster">
@@ -229,7 +302,7 @@ export function SettingsPanel({
             </div>
             <div>
               <dt>Data</dt>
-              <dd>Local LCU, Data Dragon, and OP.GG-backed signals</dd>
+              <dd>Local LCU, Data Dragon, ranked signals, and optional pro snapshots</dd>
             </div>
             <div>
               <dt>Storage</dt>
@@ -252,6 +325,15 @@ export function SettingsPanel({
       </aside>
     </div>
   );
+}
+
+export function parseFavoriteTeams(value: string): string[] {
+  return [...new Set(
+    value
+      .split(",")
+      .map((team) => team.trim())
+      .filter(Boolean),
+  )].sort((left, right) => left.localeCompare(right));
 }
 
 function mergePatches(base: AppConfigPatch | null, patch: AppConfigPatch): AppConfigPatch {

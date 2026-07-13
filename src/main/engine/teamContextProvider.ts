@@ -2,7 +2,7 @@ import type { ChampionAttributeProvider } from "../catalog/championAttributes";
 import type { MetaDataSource } from "../data/metaDataSource";
 import { buildTeamContext } from "../draft/teamContext";
 import type { DamageStyle, TeamContext } from "../../shared/championAttributes";
-import type { DraftPlayer, DraftState } from "../../shared/types";
+import type { DraftPlayer, DraftState, DraftTarget } from "../../shared/types";
 
 export interface AnalysisBackedTeamContextOptions {
   region: string;
@@ -14,11 +14,15 @@ export async function buildAnalysisBackedTeamContext(
   metaSource: MetaDataSource,
   attributeProvider: ChampionAttributeProvider,
   options: AnalysisBackedTeamContextOptions,
+  target?: DraftTarget | null,
 ): Promise<TeamContext> {
-  const damageStyles = await loadLockedDamageStyles(draft, metaSource, options);
+  const damageStyles = await loadLockedDamageStyles(draft, metaSource, options, target);
 
-  return buildTeamContext(draft, (champion) =>
-    attributeProvider.getAttributes(champion, damageStyles.get(champion.id)),
+  return buildTeamContext(
+    draft,
+    (champion) =>
+      attributeProvider.getAttributes(champion, damageStyles.get(champion.id)),
+    target,
   );
 }
 
@@ -26,6 +30,7 @@ async function loadLockedDamageStyles(
   draft: DraftState,
   metaSource: MetaDataSource,
   options: AnalysisBackedTeamContextOptions,
+  target?: DraftTarget | null,
 ): Promise<Map<number, DamageStyle>> {
   const damageStyles = new Map<number, DamageStyle>();
 
@@ -35,6 +40,11 @@ async function loadLockedDamageStyles(
 
   await Promise.all(
     [...draft.allies, ...draft.enemies]
+      .filter(
+        (player) =>
+          player.pickState === "locked" &&
+          !(target && player.side === target.side && player.cellId === target.cellId),
+      )
       .filter(hasChampionAndRole)
       .map(async (player) => {
         try {

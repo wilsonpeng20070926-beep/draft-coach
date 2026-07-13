@@ -2,7 +2,14 @@ import { deriveChampionAttributes } from "../catalog/championAttributes";
 import type { ChampionAttributeProvider } from "../catalog/championAttributes";
 import type { ChampionAnalysis, LaneMetaEntry, MetaDataSource } from "../data/metaDataSource";
 import type { ChampionAttributes, TeamContext } from "../../shared/championAttributes";
-import type { ChampionRef, DraftPlayer, DraftState, Role } from "../../shared/types";
+import type {
+  AnticipatedThreat,
+  ChampionRef,
+  DraftPlayer,
+  DraftState,
+  DraftTarget,
+  Role,
+} from "../../shared/types";
 import { scoreCandidateCompFit } from "./factors/compFitModule";
 import { scoreCandidateTeamCounter } from "./factors/teamCounterModule";
 
@@ -17,15 +24,18 @@ export interface CandidatePoolOptions {
 export interface CandidatePoolInput {
   laneMeta: LaneMetaEntry[];
   draft: DraftState;
+  target: DraftTarget;
+  threats?: AnticipatedThreat[];
   ctx: TeamContext;
   options: CandidatePoolOptions;
   metaSource: MetaDataSource;
   scoreMeta: (entry: LaneMetaEntry) => number;
   getAttributes?: ChampionAttributeProvider["getAttributes"];
+  proEntries?: LaneMetaEntry[];
 }
 
 interface CandidatePoolContributor {
-  name: "meta" | "synergy" | "compFit" | "teamCounter";
+  name: "hover" | "meta" | "pro" | "synergy" | "compFit" | "teamCounter";
   entries: LaneMetaEntry[];
 }
 
@@ -38,6 +48,7 @@ interface SynergyCandidateScore {
 
 export const CANDIDATE_POOL_LIMITS = {
   meta: 20,
+  pro: 8,
   synergy: 6,
   compFit: 6,
   teamCounter: 6,
@@ -56,11 +67,24 @@ export async function buildCandidatePool(input: CandidatePoolInput): Promise<Lan
     Math.max(0, input.options.candidateCap),
   );
 
-  if (maxPoolSize === 0 || pickableRoster.length === 0) {
+  if (
+    maxPoolSize === 0 ||
+    (pickableRoster.length === 0 && (input.proEntries?.length ?? 0) === 0)
+  ) {
     return [];
   }
 
   const contributors: CandidatePoolContributor[] = [
+    {
+      name: "hover",
+      entries: targetHoverEntries(input, excludedChampionIds),
+    },
+    {
+      name: "pro",
+      entries: (input.proEntries ?? [])
+        .filter((entry) => !excludedChampionIds.has(entry.champion.id))
+        .slice(0, CANDIDATE_POOL_LIMITS.pro),
+    },
     {
       name: "meta",
       entries: topByMeta(input.laneMeta, input, excludedChampionIds),
@@ -86,12 +110,48 @@ export function collectExcludedChampionIds(draft: DraftState): Set<number> {
   return new Set(
     [
       ...draft.bans,
-      ...draft.allies.map((player) => player.champion),
-      ...draft.enemies.map((player) => player.champion),
+      ...draft.allies
+        .filter((player) => player.pickState === "locked")
+        .map((player) => player.champion),
+      ...draft.enemies
+        .filter((player) => player.pickState === "locked")
+        .map((player) => player.champion),
     ]
       .filter((champion): champion is ChampionRef => champion !== null)
       .map((champion) => champion.id),
   );
+}
+
+function targetHoverEntries(
+  input: CandidatePoolInput,
+  excludedChampionIds: Set<number>,
+): LaneMetaEntry[] {
+  const targetPlayer = input.draft.allies.find(
+    (ally) => ally.cellId === input.target.cellId,
+  );
+
+  if (targetPlayer?.pickState !== "hovering" || !targetPlayer.champion) {
+    return [];
+  }
+
+  const entry = input.laneMeta.find(
+    (candidate) => candidate.champion.id === targetPlayer.champion?.id,
+  );
+
+  if (excludedChampionIds.has(targetPlayer.champion.id)) {
+    return [];
+  }
+
+  return [entry ?? createTargetFallbackEntry(targetPlayer.champion)];
+}
+
+export function createTargetFallbackEntry(champion: ChampionRef): LaneMetaEntry {
+  return {
+    champion,
+    winRate: 0.5,
+    tier: 5,
+    dataQuality: "target-fallback",
+  };
 }
 
 export function isRoleCandidate(
@@ -125,10 +185,15 @@ async function topSynergyFits(
   pickableRoster: LaneMetaEntry[],
   input: CandidatePoolInput,
 ): Promise<LaneMetaEntry[]> {
-  const localRole = input.draft.localPlayer?.role;
-  const allies = input.draft.allies.filter(hasChampionAndRole);
+  const targetRole = input.target.role;
+  const allies = input.draft.allies.filter(
+    (player): player is DraftPlayer & { champion: ChampionRef; role: Role } =>
+      player.pickState === "locked" &&
+      player.cellId !== input.target.cellId &&
+      hasChampionAndRole(player),
+  );
 
-  if (!localRole || allies.length === 0 || !input.metaSource.getChampionAnalysis) {
+  if (allies.length === 0 || !input.metaSource.getChampionAnalysis) {
     return [];
   }
 
@@ -146,7 +211,7 @@ async function topSynergyFits(
     }
 
     for (const synergy of analysis.synergies) {
-      if (synergy.partnerPosition !== null && synergy.partnerPosition !== localRole) {
+      if (synergy.partnerPosition !== null && synergy.partnerPosition !== targetRole) {
         continue;
       }
 

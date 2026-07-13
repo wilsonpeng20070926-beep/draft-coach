@@ -21,6 +21,12 @@ export function createFixtureCatalog() {
         name: "Darius",
         tags: ["Fighter", "Tank"],
       },
+      DrMundo: {
+        key: "36",
+        id: "DrMundo",
+        name: "Dr. Mundo",
+        tags: ["Tank", "Fighter"],
+      },
       Jax: {
         key: "24",
         id: "Jax",
@@ -110,6 +116,12 @@ export function createFixtureCatalog() {
         id: "Vladimir",
         name: "Vladimir",
         tags: ["Mage"],
+      },
+      Vayne: {
+        key: "67",
+        id: "Vayne",
+        name: "Vayne",
+        tags: ["Marksman", "Assassin"],
       },
       Xerath: {
         key: "101",

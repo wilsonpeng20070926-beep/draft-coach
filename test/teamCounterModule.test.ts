@@ -9,11 +9,18 @@ import type {
   SynergyResult,
 } from "../src/main/data/metaDataSource";
 import {
+  effectiveThreatConfidence,
+  scoreCandidateAnticipatedThreats,
   TeamCounterModule,
   candidateAnswers,
   candidateVulnerability,
   scoreCandidateTeamCounter,
 } from "../src/main/engine/factors/teamCounterModule";
+import { RecommendationEngine } from "../src/main/engine/engine";
+import {
+  applySimulationCommand,
+  createDraftSimulationState,
+} from "../src/main/draft/draftSimulator";
 import type { TeamContext } from "../src/shared/championAttributes";
 import type { ChampionRef, DraftPlayer, DraftState, Role } from "../src/shared/types";
 import { createFixtureCatalog } from "./fixtures/championFixture";
@@ -23,6 +30,9 @@ const provider = createChampionAttributeProvider("15.10.1");
 const sett = mustChampion(875);
 const thresh = mustChampion(412);
 const xerath = mustChampion(101);
+const ahri = mustChampion(103);
+const mundo = mustChampion(36);
+const vayne = mustChampion(67);
 
 describe("TeamCounterModule", () => {
   it("lifts frontline and peel picks into a dive-heavy enemy comp", () => {
@@ -116,12 +126,113 @@ describe("TeamCounterModule", () => {
     const contribution = await module.contribute(
       sett,
       createDraft({ localPlayer: player(0, "top", null, true) }),
+      target("top"),
       contextWithThreats([{ kind: "dive", severity: 1 }], 1),
     );
 
     expect(meta.analysisCalls).toBe(1);
     expect(contribution.factor).toBe("teamCounter");
     expect(contribution.delta).toBeGreaterThan(0);
+  });
+
+  it("confidence-dampens hypothetical evidence and labels it explicitly", () => {
+    const manualThreat = {
+      champion: mundo,
+      role: "top" as const,
+      source: "manual" as const,
+      confidence: 1,
+      pinned: true,
+    };
+    const forecastThreat = {
+      ...manualThreat,
+      source: "forecast" as const,
+    };
+    const manual = scoreCandidateAnticipatedThreats(
+      vayne,
+      provider.getAttributes(vayne, "ad"),
+      [manualThreat],
+    );
+
+    expect(effectiveThreatConfidence(manualThreat)).toBe(0.7);
+    expect(effectiveThreatConfidence(forecastThreat)).toBe(0.45);
+    expect(manual.confidence).toBe(0.7);
+    expect(manual.reasons[0]).toMatchObject({
+      text: "Hypothetical anti-health answer into Dr. Mundo",
+      confidence: 0.7,
+    });
+  });
+
+  it("a pinned Dr. Mundo threat raises an anti-health answer and removal restores ranking", async () => {
+    const meta = new FakeMetaDataSource();
+    meta.laneMeta = [
+      laneEntry(ahri, 0.526, 2),
+      laneEntry(vayne, 0.52, 2),
+    ];
+    const module = new TeamCounterModule(
+      meta,
+      provider,
+      () => "global",
+      () => "emerald_plus",
+      () => 0.58,
+    );
+    const engine = new RecommendationEngine(meta, [module], {
+      region: "global",
+      rank: "emerald_plus",
+      topN: 5,
+      candidateCap: 40,
+      weights: {
+        meta: 0.8,
+        laneCounter: 0,
+        teamCounter: 1,
+        synergy: 0,
+        compFit: 0,
+      },
+      shrinkK: 1000,
+      pickRateFloor: 0.005,
+      metaRolePresenceFloor: 0.2,
+    });
+    let simulation = createDraftSimulationState();
+    const recommendationTarget = target("middle", 2);
+
+    const baseline = await engine.recommend(
+      simulation.draft,
+      recommendationTarget,
+    );
+    simulation = applySimulationCommand(
+      simulation,
+      {
+        type: "pinThreat",
+        championId: mundo.id,
+        role: "top",
+        source: "manual",
+        confidence: 1,
+      },
+      catalog,
+    );
+    const threatened = await engine.recommend(
+      simulation.draft,
+      recommendationTarget,
+      simulation.threats,
+    );
+    simulation = applySimulationCommand(
+      simulation,
+      { type: "removeThreat", championId: mundo.id },
+      catalog,
+    );
+    const restored = await engine.recommend(
+      simulation.draft,
+      recommendationTarget,
+      simulation.threats,
+    );
+
+    expect(baseline.recommendations[0].champion.name).toBe("Ahri");
+    expect(threatened.recommendations[0].champion.name).toBe("Vayne");
+    expect(
+      threatened.recommendations[0].contributions
+        .find((contribution) => contribution.factor === "teamCounter")
+        ?.reasons,
+    ).toContain("Hypothetical anti-health answer into Dr. Mundo");
+    expect(restored.recommendations[0].champion.name).toBe("Ahri");
   });
 });
 
@@ -146,8 +257,9 @@ function createDraft(overrides: Partial<DraftState> = {}): DraftState {
     allies: [localPlayer],
     enemies: [],
     bans: [],
+    pickActions: [],
+    activeAllyPickCellIds: [],
     localPlayer,
-    laneOpponent: null,
     ...overrides,
   };
 }
@@ -160,9 +272,21 @@ function player(
 ): DraftPlayer {
   return {
     cellId,
+    side: "ally",
     role,
     champion,
+    pickState: champion ? "locked" : "empty",
     isLocalPlayer,
+  };
+}
+
+function target(role: Role = "middle", cellId = 0) {
+  return {
+    side: "ally" as const,
+    cellId,
+    role,
+    source: "automatic" as const,
+    purpose: "recommend" as const,
   };
 }
 
@@ -198,6 +322,7 @@ function mustChampion(id: number): ChampionRef {
 
 class FakeMetaDataSource implements MetaDataSource {
   analysisCalls = 0;
+  laneMeta: LaneMetaEntry[] = [];
   private readonly analyses = new Map<number, ChampionAnalysis>();
 
   setAnalysis(champion: ChampionRef, analysis: ChampionAnalysis): void {
@@ -205,7 +330,7 @@ class FakeMetaDataSource implements MetaDataSource {
   }
 
   async getLaneMeta(): Promise<LaneMetaEntry[]> {
-    return [];
+    return this.laneMeta;
   }
 
   async getMatchup(): Promise<MatchupResult> {
@@ -230,4 +355,19 @@ class FakeMetaDataSource implements MetaDataSource {
       utility: 0,
     };
   }
+}
+
+function laneEntry(
+  champion: ChampionRef,
+  winRate: number,
+  tier: number,
+): LaneMetaEntry {
+  return {
+    champion,
+    winRate,
+    tier,
+    pickRate: 0.08,
+    play: 20_000,
+    roleRate: 1,
+  };
 }

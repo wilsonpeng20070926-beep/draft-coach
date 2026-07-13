@@ -53,6 +53,25 @@ describe("team context", () => {
     expect(context.allyNeeds).toEqual([]);
   });
 
+  it("does not let another ally hover alter locked team composition", () => {
+    const lockedOnly = buildTeamContext(
+      draftState({ allies: [player(1, mustChampion(222), "bottom")] }),
+      attributes.getAttributes,
+    );
+    const withHover = buildTeamContext(
+      draftState({
+        allies: [
+          player(1, mustChampion(222), "bottom"),
+          player(2, mustChampion(61), "middle", "assigned", 1, "hovering"),
+        ],
+      }),
+      attributes.getAttributes,
+    );
+
+    expect(withHover).toEqual(lockedOnly);
+    expect(withHover.ally.championCount).toBe(1);
+  });
+
   it("detects dive threats and dampens them when enemy roles are low confidence", () => {
     const assignedContext = buildTeamContext(
       draftState({
@@ -135,8 +154,9 @@ function draftState(options: {
     allies,
     enemies: options.enemies ?? [],
     bans: options.bans ?? [],
+    pickActions: [],
+    activeAllyPickCellIds: [],
     localPlayer: allies[0] ?? null,
-    laneOpponent: null,
   };
 }
 
@@ -146,11 +166,14 @@ function player(
   role: Role,
   roleSource: DraftPlayer["roleSource"] = "assigned",
   roleConfidence = 1,
+  pickState: DraftPlayer["pickState"] = "locked",
 ): DraftPlayer {
   return {
     cellId,
+    side: cellId >= 5 ? "enemy" : "ally",
     role,
     champion,
+    pickState,
     isLocalPlayer: cellId === 1,
     roleSource,
     roleConfidence,

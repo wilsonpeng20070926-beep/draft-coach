@@ -1,0 +1,95 @@
+name: Professional Data Snapshot
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+    inputs:
+      patches:
+        description: "Current patch followed by the two previous patches (comma-separated)"
+        required: false
+        type: string
+
+concurrency:
+  group: professional-data-snapshot
+  cancel-in-progress: false
+
+jobs:
+  build-snapshot:
+    name: Fetch, validate, and build snapshot
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch normalized Leaguepedia drafts
+        env:
+          MANUAL_PATCHES: ${{ inputs.patches }}
+        run: |
+          PATCH_ARGS=()
+          if [ -n "$MANUAL_PATCHES" ]; then
+            PATCH_ARGS=(--patches "$MANUAL_PATCHES")
+          fi
+          npm run pro:fetch -- "${PATCH_ARGS[@]}" --output .cache/pro-data/raw-drafts.json
+
+      - name: Validate normalized drafts
+        run: npm run pro:validate -- --input .cache/pro-data/raw-drafts.json
+
+      - name: Build deterministic snapshot
+        run: npm run pro:build -- --input .cache/pro-data/raw-drafts.json --output data/pro/pro-snapshot.json
+
+      - name: Validate snapshot payloads
+        run: |
+          npm run pro:validate -- --input data/pro/pro-snapshot.json
+          npm run pro:validate -- --input data/pro/pro-snapshot.json.gz
+
+      - name: Report checksum
+        run: npm run pro:checksum -- --input data/pro/pro-snapshot.json
+
+      - name: Upload verified snapshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pro-data-snapshot
+          path: |
+            data/pro/pro-snapshot.json
+            data/pro/pro-snapshot.json.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-snapshot:
+    name: Publish gated static snapshot
+    needs: build-snapshot
+    if: ${{ vars.PRO_SNAPSHOT_PUBLISH_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download verified snapshot
+        uses: actions/download-artifact@v4
+        with:
+          name: pro-data-snapshot
+          path: data/pro
+
+      - name: Publish GitHub release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view pro-data-latest >/dev/null 2>&1; then
+            gh release upload pro-data-latest data/pro/pro-snapshot.json data/pro/pro-snapshot.json.gz --clobber
+          else
+            gh release create pro-data-latest data/pro/pro-snapshot.json data/pro/pro-snapshot.json.gz --title "Draft Coach professional data" --notes "Automatically generated, versioned professional-data snapshot."
+          fi

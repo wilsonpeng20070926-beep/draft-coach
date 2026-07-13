@@ -47,5 +47,15 @@ jobs:
       - name: Public snapshot scan
         run: npm run security:scan
 
+      - name: Validate release policy status
+        run: npm run release:policy:report
+
+      - name: Configure Electron sandbox
+        run: |
+          node node_modules/electron/install.js
+          sudo chown root:root node_modules/electron/dist/chrome-sandbox
+          sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+          test "$(stat -c '%U:%G %a' node_modules/electron/dist/chrome-sandbox)" = "root:root 4755"
+
       - name: Electron smoke
         run: xvfb-run -a npm run smoke:electron

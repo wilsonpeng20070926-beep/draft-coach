@@ -42,7 +42,7 @@ describe("scoring calibration", () => {
       .map((entry) => entry.champion.name);
     const engine = createEngine(meta, FACTOR_WEIGHT_PRESETS.trustTheMeta);
 
-    const result = await engine.recommend(createDraft());
+    const result = await recommend(engine, createDraft());
 
     expect(result.recommendations.map((recommendation) => recommendation.champion.name)).toEqual(
       expectedOrder,
@@ -56,11 +56,10 @@ describe("scoring calibration", () => {
     const draft = createDraft({
       allies: [player(0, "middle", null, true), player(1, "jungle", nocturne, false)],
       enemies: [player(5, "middle", yasuo, false, "assigned", 1)],
-      laneOpponent: player(5, "middle", yasuo, false, "assigned", 1),
     });
 
-    const trust = await trustEngine.recommend(draft);
-    const coach = await coachEngine.recommend(draft);
+    const trust = await recommend(trustEngine, draft);
+    const coach = await recommend(coachEngine, draft);
     const trustOrder = trust.recommendations.map((recommendation) => recommendation.champion.name);
     const coachOrder = coach.recommendations.map((recommendation) => recommendation.champion.name);
 
@@ -71,11 +70,11 @@ describe("scoring calibration", () => {
 
   it("keeps calibrated totals away from clamp pileups", async () => {
     const engine = createEngine(createMotivatedMeta(), FACTOR_WEIGHT_PRESETS.coach);
-    const result = await engine.recommend(
+    const result = await recommend(
+      engine,
       createDraft({
         allies: [player(0, "middle", null, true), player(1, "jungle", nocturne, false)],
         enemies: [player(5, "middle", yasuo, false, "assigned", 1)],
-        laneOpponent: player(5, "middle", yasuo, false, "assigned", 1),
       }),
     );
     const totals = result.recommendations.map((recommendation) => recommendation.total);
@@ -92,11 +91,10 @@ describe("scoring calibration", () => {
     riskyMeta.setMatchup(ahri, yasuo, 0.46);
     const draft = createDraft({
       enemies: [player(5, "middle", yasuo, false, "assigned", 1)],
-      laneOpponent: player(5, "middle", yasuo, false, "assigned", 1),
     });
 
-    const even = await createEngine(evenMeta, FACTOR_WEIGHT_PRESETS.laneBully).recommend(draft);
-    const risky = await createEngine(riskyMeta, FACTOR_WEIGHT_PRESETS.laneBully).recommend(draft);
+    const even = await recommend(createEngine(evenMeta, FACTOR_WEIGHT_PRESETS.laneBully), draft);
+    const risky = await recommend(createEngine(riskyMeta, FACTOR_WEIGHT_PRESETS.laneBully), draft);
 
     expect(risky.recommendations[0].total).toBeLessThan(even.recommendations[0].total);
   });
@@ -115,8 +113,8 @@ describe("scoring calibration", () => {
       allies: [player(0, "top", null, true)],
     });
 
-    const trust = await trustEngine.recommend(draft);
-    const laneBully = await laneBullyEngine.recommend(draft);
+    const trust = await recommend(trustEngine, draft);
+    const laneBully = await recommend(laneBullyEngine, draft);
 
     expect(trust.recommendations[0].champion.name).toBe("Xerath");
     expect(laneBully.recommendations[0].champion.name).toBe("Sett");
@@ -213,8 +211,9 @@ function createDraft(overrides: Partial<DraftState> = {}): DraftState {
     allies: [localPlayer],
     enemies: [],
     bans: [],
+    pickActions: [],
+    activeAllyPickCellIds: [],
     localPlayer,
-    laneOpponent: null,
     ...overrides,
   };
 }
@@ -259,12 +258,30 @@ function player(
 ): DraftPlayer {
   return {
     cellId,
+    side: cellId >= 5 ? "enemy" : "ally",
     role,
     champion,
+    pickState: champion ? "locked" : "empty",
     isLocalPlayer,
     roleSource,
     roleConfidence,
   };
+}
+
+function recommend(engine: RecommendationEngine, draft: DraftState) {
+  const player = draft.localPlayer;
+
+  if (!player?.role) {
+    throw new Error("Calibration draft requires a target role");
+  }
+
+  return engine.recommend(draft, {
+    side: "ally",
+    cellId: player.cellId,
+    role: player.role,
+    source: "automatic",
+    purpose: "recommend",
+  });
 }
 
 function laneEntry(

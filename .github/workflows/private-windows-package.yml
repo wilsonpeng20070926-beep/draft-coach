@@ -1,0 +1,90 @@
+name: Private Windows Package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-windows:
+    name: Build and smoke Windows installer
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Electron runtime
+        run: node node_modules/electron/install.js
+
+      - name: Verify source
+        run: |
+          npm run typecheck
+          npm test
+          npm run evaluation:test
+          npm audit --omit=dev
+          npm run security:scan
+
+      - name: Build unpacked Windows app
+        run: npm run dist:dir
+
+      - name: Smoke packaged Windows app
+        shell: pwsh
+        run: |
+          $executable = "release/win-unpacked/Draft Coach.exe"
+          if (-not (Test-Path $executable)) {
+            throw "Missing unpacked executable: $executable"
+          }
+
+          $env:DRAFT_COACH_SMOKE = "1"
+          $process = Start-Process -FilePath $executable -PassThru
+          if (-not $process.WaitForExit(30000)) {
+            $process.Kill()
+            throw "Packaged Windows smoke timed out"
+          }
+          if ($process.ExitCode -ne 0) {
+            throw "Packaged Windows smoke exited with code $($process.ExitCode)"
+          }
+
+          $version = (Get-Item $executable).VersionInfo.ProductVersion
+          $expectedVersion = (Get-Content package.json | ConvertFrom-Json).version
+          if ($version -notlike "$expectedVersion*") {
+            throw "Unexpected packaged version: $version"
+          }
+
+      - name: Build installer and checksums
+        run: npm run package:private:win
+
+      - name: Record unsigned installer status
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          $installer = Get-Item "release/draft-coach-$version-win-x64.exe"
+          $signature = Get-AuthenticodeSignature $installer.FullName
+          Write-Host "Installer: $($installer.Name)"
+          Write-Host "Size: $($installer.Length) bytes"
+          Write-Host "Authenticode status: $($signature.Status)"
+          if ($signature.Status -ne "NotSigned") {
+            throw "Expected an explicitly unsigned private installer, got $($signature.Status)"
+          }
+
+      - name: Upload private installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: draft-coach-windows-private
+          path: |
+            release/draft-coach-*-win-x64.exe
+            release/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14

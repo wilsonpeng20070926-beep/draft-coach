@@ -4,13 +4,13 @@
   "description": "League of Legends champ-select draft assistant.",
   "author": "Draft Coach maintainers",
   "license": "MIT",
-  "homepage": "https://github.com/wilsonpeng20070926-beep/League-smart#readme",
+  "homepage": "https://github.com/wilsonpeng20070926-beep/draft-coach#readme",
   "bugs": {
-    "url": "https://github.com/wilsonpeng20070926-beep/League-smart/issues"
+    "url": "https://github.com/wilsonpeng20070926-beep/draft-coach/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wilsonpeng20070926-beep/League-smart.git"
+    "url": "git+https://github.com/wilsonpeng20070926-beep/draft-coach.git"
   },
   "keywords": [
     "league-of-legends",
@@ -21,7 +21,7 @@
   ],
   "main": "out/main/index.js",
   "engines": {
-    "node": ">=20 <25"
+    "node": ">=22.12 <25"
   },
   "scripts": {
     "dev": "electron-vite dev",
@@ -29,15 +29,26 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "pro:fetch": "tsx scripts/pro-data.ts fetch",
+    "pro:build": "tsx scripts/pro-data.ts build",
+    "pro:validate": "tsx scripts/pro-data.ts validate",
+    "pro:checksum": "tsx scripts/pro-data.ts checksum",
     "security:scan": "node scripts/scan-public-snapshot.mjs",
+    "evaluation:test": "vitest run test/draftReplayEvaluation.test.ts test/engineReplayAdapter.test.ts test/scenarioEvaluation.test.ts test/evaluationConfigurations.test.ts test/configurationComparisonEngine.test.ts test/recommendationPerformance.test.ts test/proResilienceMatrix.test.ts",
+    "release:policy:report": "node scripts/check-release-policy.mjs report",
+    "release:policy:assert": "node scripts/check-release-policy.mjs public",
+    "release:policy:commercial": "node scripts/check-release-policy.mjs commercial",
     "smoke:electron": "npm run build && node scripts/smoke-electron.mjs",
     "dist": "npm run build && electron-builder --publish never",
     "dist:dir": "npm run build && electron-builder --dir --publish never",
     "dist:win": "npm run build && electron-builder --win nsis --publish never",
     "dist:mac": "npm run build && electron-builder --mac zip --publish never",
     "dist:mac:dmg": "npm run build && electron-builder --mac dmg --publish never",
+    "package:private:mac": "npm run dist:mac && npm run release:assert-artifacts && npm run release:checksums && npm run release:verify-checksums",
+    "package:private:win": "npm run dist:win && npm run release:assert-artifacts && npm run release:checksums && npm run release:verify-checksums",
     "release:assert-artifacts": "node scripts/assert-release-artifacts.mjs release",
-    "release:checksums": "node scripts/write-checksums.mjs release"
+    "release:checksums": "node scripts/write-checksums.mjs release",
+    "release:verify-checksums": "node scripts/verify-checksums.mjs release"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -50,7 +61,7 @@
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^5.2.0",
-    "electron": "^39.8.6",
+    "electron": "^43.1.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "tsx": "^4.22.3",
@@ -62,7 +73,7 @@
     "appId": "io.github.draftcoach.app",
     "productName": "Draft Coach",
     "electronDist": "node_modules/electron/dist",
-    "electronVersion": "39.8.6",
+    "electronVersion": "43.1.0",
     "directories": {
       "buildResources": "build",
       "output": "release"

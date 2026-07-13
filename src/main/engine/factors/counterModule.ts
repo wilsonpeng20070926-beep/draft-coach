@@ -3,9 +3,11 @@ import type { TeamContext } from "../../../shared/championAttributes";
 import type {
   ChampionRef,
   DraftState,
+  DraftTarget,
   FactorContribution,
   ReasonChip,
 } from "../../../shared/types";
+import { resolveTargetLaneOpponent } from "../../draft/draftManager";
 import type { FactorModule } from "../engine";
 import { COUNTER_DELTA_SCALE, clamp01 } from "../scoringConstants";
 
@@ -23,10 +25,11 @@ export class CounterModule implements FactorModule {
   async contribute(
     candidate: ChampionRef,
     draft: DraftState,
+    target: DraftTarget,
     _ctx: TeamContext,
   ): Promise<FactorContribution> {
-    const role = draft.localPlayer?.role;
-    const laneOpponent = draft.laneOpponent;
+    const role = target.role;
+    const laneOpponent = resolveTargetLaneOpponent(draft, target);
     const opponent = laneOpponent?.champion;
 
     if (!role || !opponent) {
@@ -82,7 +85,7 @@ function createMatchupReason(
   opponentName: string,
   winRate: number,
   confidence: number,
-  roleSource: "assigned" | "inferred" | undefined,
+  roleSource: DraftState["enemies"][number]["roleSource"],
 ): ReasonChip {
   const polarity = winRate >= 0.525 ? "positive" : winRate <= 0.475 ? "negative" : "neutral";
   const percent = `${Math.round(winRate * 100)}%`;
@@ -102,7 +105,7 @@ function formatMatchupReasonText(
   opponentName: string,
   winRate: number,
   confidence: number,
-  roleSource: "assigned" | "inferred" | undefined,
+  roleSource: DraftState["enemies"][number]["roleSource"],
   percent: string,
 ): string {
   if (roleSource === "inferred" && confidence < 0.5) {

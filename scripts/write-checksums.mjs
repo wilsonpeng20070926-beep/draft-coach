@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
-import { readdir, stat, writeFile } from "node:fs/promises";
+import { readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const targetDirectory = process.argv[2] ?? "release";
+const packageJson = JSON.parse(await readFile("package.json", "utf8"));
+const artifactPrefix = `draft-coach-${packageJson.version}-`;
 const artifactPatterns =
   process.platform === "win32"
     ? [/\.exe$/i]
@@ -15,7 +17,11 @@ async function main() {
   const lines = [];
 
   for (const entry of entries) {
-    if (!entry.isFile() || !artifactPatterns.some((pattern) => pattern.test(entry.name))) {
+    if (
+      !entry.isFile() ||
+      !entry.name.startsWith(artifactPrefix) ||
+      !artifactPatterns.some((pattern) => pattern.test(entry.name))
+    ) {
       continue;
     }
 
@@ -28,6 +34,10 @@ async function main() {
     const data = await import("node:fs/promises").then(({ readFile }) => readFile(file));
     const hash = createHash("sha256").update(data).digest("hex");
     lines.push(`${hash}  ${entry.name}`);
+  }
+
+  if (lines.length === 0) {
+    throw new Error(`No current ${artifactPrefix} artifacts found in ${targetDirectory}`);
   }
 
   lines.sort();

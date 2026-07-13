@@ -9,6 +9,7 @@ import type {
 import type {
   ChampionRef,
   DraftState,
+  DraftTarget,
   FactorBreakdown,
   FactorContribution,
   ReasonChip,
@@ -24,6 +25,7 @@ interface NeedMatch {
 }
 
 const MIN_COMP_FIT_CHIP_IMPACT = 0.12;
+const REDUNDANCY_DELTA_SCALE = 0.1;
 const NEED_PROVIDE_LABELS: Record<CompNeedKind, string> = {
   ap: "AP",
   ad: "AD",
@@ -55,13 +57,14 @@ export class CompFitModule implements FactorModule {
   async contribute(
     candidate: ChampionRef,
     draft: DraftState,
+    target: DraftTarget,
     ctx: TeamContext,
   ): Promise<FactorContribution> {
     if (ctx.allyNeeds.length === 0) {
       return createCompFitContribution(0, 0, [], []);
     }
 
-    const role = draft.localPlayer?.role;
+    const role = target.role;
     const attributes = await this.loadCandidateAttributes(candidate, role);
 
     return scoreCandidateCompFit(candidate, attributes, ctx);
@@ -110,6 +113,25 @@ export function scoreCandidateCompFit(
   );
 
   if (positiveMatches.length === 0) {
+    const redundancy = strongestDamageRedundancy(ctx.allyNeeds, attributes);
+
+    if (redundancy) {
+      const reason: ReasonChip = {
+        kind: "comp-fit",
+        text: redundancy.text,
+        polarity: "negative",
+        strength: clamp01(redundancy.impact),
+        confidence: clamp01(ctx.confidence),
+      };
+
+      return createCompFitContribution(
+        -redundancy.impact * REDUNDANCY_DELTA_SCALE,
+        ctx.confidence,
+        [reason],
+        breakdown,
+      );
+    }
+
     return createCompFitContribution(0, ctx.confidence, [], breakdown);
   }
 
@@ -124,6 +146,25 @@ export function scoreCandidateCompFit(
     reason ? [reason] : [],
     breakdown,
   );
+}
+
+function strongestDamageRedundancy(
+  needs: CompNeed[],
+  attributes: ChampionAttributes,
+): { impact: number; text: string } | null {
+  const candidates = needs.flatMap((need) => {
+    if (need.kind === "ap" && damageProvides(attributes.damageStyle, "ad") >= 0.8) {
+      return [{ impact: need.severity, text: "Adds more AD to an AD-heavy team" }];
+    }
+
+    if (need.kind === "ad" && damageProvides(attributes.damageStyle, "ap") >= 0.8) {
+      return [{ impact: need.severity, text: "Adds more AP to an AP-heavy team" }];
+    }
+
+    return [];
+  });
+
+  return candidates.sort((left, right) => right.impact - left.impact)[0] ?? null;
 }
 
 export function candidateProvides(

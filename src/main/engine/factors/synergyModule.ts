@@ -7,6 +7,7 @@ import type { TeamContext } from "../../../shared/championAttributes";
 import type {
   ChampionRef,
   DraftState,
+  DraftTarget,
   FactorBreakdown,
   FactorContribution,
   ReasonChip,
@@ -43,10 +44,11 @@ export class SynergyModule implements FactorModule {
   async contribute(
     candidate: ChampionRef,
     draft: DraftState,
+    target: DraftTarget,
     _ctx: TeamContext,
   ): Promise<FactorContribution> {
-    const role = draft.localPlayer?.role;
-    const allies = collectAllies(draft, candidate);
+    const role = target.role;
+    const allies = collectAllies(draft, target, candidate);
 
     if (!role || allies.length === 0) {
       return createSynergyContribution(0, 0, [], []);
@@ -109,8 +111,16 @@ export function scoreCandidateSynergy(
   return createSynergyContribution(delta, confidence, reasons, breakdown);
 }
 
-function collectAllies(draft: DraftState, candidate: ChampionRef): SynergyAlly[] {
+function collectAllies(
+  draft: DraftState,
+  target: DraftTarget,
+  candidate: ChampionRef,
+): SynergyAlly[] {
   return draft.allies
+    .filter(
+      (player) =>
+        player.pickState === "locked" && player.cellId !== target.cellId,
+    )
     .map((player): SynergyAlly | null =>
       player.champion
         ? {

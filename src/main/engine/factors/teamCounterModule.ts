@@ -7,8 +7,10 @@ import type {
   TeamContext,
 } from "../../../shared/championAttributes";
 import type {
+  AnticipatedThreat,
   ChampionRef,
   DraftState,
+  DraftTarget,
   FactorBreakdown,
   FactorContribution,
   ReasonChip,
@@ -34,6 +36,10 @@ interface ThreatShape {
 
 const MAX_TEAM_COUNTER_CHIPS = 2;
 const MIN_TEAM_COUNTER_CHIP_IMPACT = 0.08;
+const ANTICIPATED_THREAT_DELTA_SCALE = 0.14;
+
+export const HIGH_HEALTH_THREAT_IDS = new Set([14, 36, 154, 223, 420]);
+export const ANTI_HEALTH_CHAMPION_IDS = new Set([48, 63, 67, 96, 114, 145, 887]);
 
 export const TEAM_COUNTER_THREAT_WEIGHTS: Record<CompThreatKind, ThreatShape> = {
   dive: {
@@ -173,20 +179,41 @@ export class TeamCounterModule implements FactorModule {
   async contribute(
     candidate: ChampionRef,
     draft: DraftState,
+    target: DraftTarget,
     ctx: TeamContext,
+    threats: AnticipatedThreat[] = [],
   ): Promise<FactorContribution> {
-    if (ctx.enemyThreats.length === 0) {
+    const unlockedThreats = threats.filter(
+      (threat) =>
+        !draft.enemies.some(
+          (enemy) =>
+            enemy.pickState === "locked" &&
+            enemy.champion?.id === threat.champion.id,
+        ),
+    );
+
+    if (ctx.enemyThreats.length === 0 && unlockedThreats.length === 0) {
       return createTeamCounterContribution(0, 0, [], []);
     }
 
-    const role = draft.localPlayer?.role;
+    const role = target.role;
     const attributes = await this.loadCandidateAttributes(candidate, role);
 
-    return scoreCandidateTeamCounter(
+    const compositionContribution = scoreCandidateTeamCounter(
       candidate,
       attributes,
       ctx,
       this.getMinChipConfidence(),
+    );
+    const anticipatedContribution = scoreCandidateAnticipatedThreats(
+      candidate,
+      attributes,
+      unlockedThreats,
+    );
+
+    return combineTeamCounterContributions(
+      compositionContribution,
+      anticipatedContribution,
     );
   }
 
@@ -207,6 +234,156 @@ export class TeamCounterModule implements FactorModule {
 
     return this.attributeProvider.getAttributes(candidate, analysis.damageStyle);
   }
+}
+
+export function scoreCandidateAnticipatedThreats(
+  candidate: ChampionRef,
+  attributes: ChampionAttributes,
+  threats: AnticipatedThreat[],
+): FactorContribution {
+  if (threats.length === 0) {
+    return createTeamCounterContribution(0, 0, [], []);
+  }
+
+  const matches = threats
+    .map((threat) => {
+      const answer = anticipatedThreatAnswer(candidate, attributes, threat);
+      const confidence = effectiveThreatConfidence(threat);
+
+      return {
+        threat,
+        answer,
+        confidence,
+        impact: answer * confidence,
+      };
+    })
+    .filter((match) => match.answer > 0.05)
+    .sort(
+      (left, right) =>
+        right.impact - left.impact ||
+        left.threat.champion.id - right.threat.champion.id,
+    );
+
+  if (matches.length === 0) {
+    return createTeamCounterContribution(0, 0, [], []);
+  }
+
+  const best = matches[0];
+  const combinedAnswer = clamp01(
+    1 - matches.reduce((remaining, match) => remaining * (1 - match.answer), 1),
+  );
+  const confidence = Math.max(...matches.map((match) => match.confidence));
+  const delta = combinedAnswer * ANTICIPATED_THREAT_DELTA_SCALE;
+  const reason: ReasonChip = {
+    kind: "team-counter",
+    text: formatAnticipatedThreatReason(candidate, best.threat),
+    polarity: "positive",
+    strength: clamp01(best.answer),
+    confidence: best.confidence,
+  };
+  const breakdown: FactorBreakdown[] = matches.slice(0, 3).map((match) => ({
+    kind: "team-counter",
+    label: `Hypothetical answer into ${match.threat.champion.name}`,
+    value: match.answer,
+    confidence: match.confidence,
+    polarity: "positive",
+    strength: match.answer,
+    championId: match.threat.champion.id,
+    championName: match.threat.champion.name,
+  }));
+
+  return createTeamCounterContribution(delta, confidence, [reason], breakdown);
+}
+
+export function effectiveThreatConfidence(threat: AnticipatedThreat): number {
+  const sourceCap: Record<AnticipatedThreat["source"], number> = {
+    forecast: 0.45,
+    manual: 0.7,
+    simulation: 0.62,
+  };
+
+  return Math.min(clamp01(threat.confidence), sourceCap[threat.source]);
+}
+
+function anticipatedThreatAnswer(
+  candidate: ChampionRef,
+  attributes: ChampionAttributes,
+  threat: AnticipatedThreat,
+): number {
+  if (HIGH_HEALTH_THREAT_IDS.has(threat.champion.id)) {
+    if (ANTI_HEALTH_CHAMPION_IDS.has(candidate.id)) {
+      return 1;
+    }
+
+    return clamp01(
+      attributes.carryPotential * 0.25 +
+        (attributes.range === "ranged" ? 0.1 : 0),
+    );
+  }
+
+  if (threat.champion.tags.includes("Assassin")) {
+    return weightedSum([
+      [attributes.peel, 0.5],
+      [attributes.frontline, 0.3],
+      [attributes.mobility, 0.2],
+    ]);
+  }
+
+  if (threat.champion.tags.includes("Tank")) {
+    return clamp01(
+      attributes.carryPotential * 0.55 +
+        (attributes.range === "ranged" ? 0.2 : 0),
+    );
+  }
+
+  if (threat.champion.tags.includes("Mage")) {
+    return weightedSum([
+      [attributes.mobility, 0.45],
+      [rangeAnswer(attributes), 0.35],
+      [attributes.engage, 0.2],
+    ]);
+  }
+
+  return weightedSum([
+    [attributes.frontline, 0.35],
+    [attributes.peel, 0.35],
+    [attributes.carryPotential, 0.3],
+  ]);
+}
+
+function formatAnticipatedThreatReason(
+  candidate: ChampionRef,
+  threat: AnticipatedThreat,
+): string {
+  if (
+    HIGH_HEALTH_THREAT_IDS.has(threat.champion.id) &&
+    ANTI_HEALTH_CHAMPION_IDS.has(candidate.id)
+  ) {
+    return `Hypothetical anti-health answer into ${threat.champion.name}`;
+  }
+
+  return `Hypothetical answer into ${threat.champion.name}`;
+}
+
+function combineTeamCounterContributions(
+  composition: FactorContribution,
+  anticipated: FactorContribution,
+): FactorContribution {
+  if (anticipated.confidence <= 0) {
+    return composition;
+  }
+
+  if (composition.confidence <= 0) {
+    return anticipated;
+  }
+
+  return createTeamCounterContribution(
+    composition.delta * composition.confidence +
+      anticipated.delta * anticipated.confidence,
+    1,
+    [...composition.reasons, ...anticipated.reasons].slice(0, MAX_TEAM_COUNTER_CHIPS),
+    [...composition.breakdown ?? [], ...anticipated.breakdown ?? []],
+  );
 }
 
 export function scoreCandidateTeamCounter(

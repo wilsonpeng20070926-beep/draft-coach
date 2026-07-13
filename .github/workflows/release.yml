@@ -40,6 +40,9 @@ jobs:
       - name: Test release build
         run: npm run build
 
+      - name: Enforce public-release policy gates
+        run: npm run release:policy:assert
+
       - name: Package
         run: ${{ matrix.command }}
 

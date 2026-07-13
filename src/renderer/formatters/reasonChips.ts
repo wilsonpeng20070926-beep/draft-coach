@@ -13,6 +13,7 @@ const KIND_LABELS: Record<ReasonKind, string> = {
   "team-counter": "Team",
   synergy: "Syn",
   "comp-fit": "Fit",
+  pro: "Pro",
   warning: "Warn",
 };
 
@@ -22,6 +23,7 @@ const KIND_ICONS: Record<ReasonKind, string> = {
   "team-counter": "T",
   synergy: "S",
   "comp-fit": "C",
+  pro: "P",
   warning: "!",
 };
 
@@ -79,6 +81,10 @@ export function formatFactorName(factor: string): string {
 
   if (factor === "compFit") {
     return "comp-fit";
+  }
+
+  if (factor.startsWith("pro")) {
+    return `pro-${factor.slice(3).replace(/([A-Z])/g, "-$1").toLowerCase()}`;
   }
 
   return factor;
