@@ -132,10 +132,11 @@ Draft Coach reads local League client state and fetches public game-data context
 - [Evaluation](docs/EVALUATION.md)
 - [Calibration Report](docs/CALIBRATION_REPORT.md)
 - [Release Policy Status](docs/RELEASE_POLICY_STATUS.json)
+- [Release Approval Requests](docs/RELEASE_APPROVAL_REQUESTS.md)
 
 ## Contributing
 
-Contributions are welcome after the public repository is opened. Please read [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [SUPPORT.md](SUPPORT.md).
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [SUPPORT.md](SUPPORT.md).
 
 ## Release Checklist
 
