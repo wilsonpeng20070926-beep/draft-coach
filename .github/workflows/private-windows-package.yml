@@ -53,6 +53,7 @@ jobs:
         run: node node_modules/electron/install.js
 
       - name: Verify source
+        shell: bash
         run: |
           npm run typecheck
           npm test

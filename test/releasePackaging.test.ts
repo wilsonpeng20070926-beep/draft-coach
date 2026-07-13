@@ -59,16 +59,18 @@ describe("release packaging", () => {
       join(process.cwd(), ".github/workflows/private-windows-package.yml"),
       "utf8",
     );
+    const normalizedWorkflow = workflow.replace(/\r\n/g, "\n");
 
-    expect(workflow).toContain("runs-on: windows-latest");
-    expect(workflow).toContain("pull_request:");
-    expect(workflow).toContain("push:");
-    expect(workflow).toContain("permissions:\n  contents: read");
-    expect(workflow).toContain("npm run dist:dir");
-    expect(workflow).toContain("DRAFT_COACH_SMOKE");
-    expect(workflow).toContain("Get-AuthenticodeSignature");
-    expect(workflow).toContain("actions/upload-artifact@v7");
-    expect(workflow).not.toContain("softprops/action-gh-release");
-    expect(workflow).not.toContain("npm run release:policy:assert");
+    expect(normalizedWorkflow).toContain("runs-on: windows-latest");
+    expect(normalizedWorkflow).toContain("pull_request:");
+    expect(normalizedWorkflow).toContain("push:");
+    expect(normalizedWorkflow).toContain("permissions:\n  contents: read");
+    expect(normalizedWorkflow).toContain("name: Verify source\n        shell: bash");
+    expect(normalizedWorkflow).toContain("npm run dist:dir");
+    expect(normalizedWorkflow).toContain("DRAFT_COACH_SMOKE");
+    expect(normalizedWorkflow).toContain("Get-AuthenticodeSignature");
+    expect(normalizedWorkflow).toContain("actions/upload-artifact@v7");
+    expect(normalizedWorkflow).not.toContain("softprops/action-gh-release");
+    expect(normalizedWorkflow).not.toContain("npm run release:policy:assert");
   });
 });
