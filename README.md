@@ -33,7 +33,7 @@ The current app includes meta anchoring, lane-counter signals, team-counter warn
 
 ## Download
 
-The owner-authorized `v0.2.0-preview.1` release is an uncertified prerelease for friend testing. It must remain visibly labeled as unregistered, unapproved, unsigned, and not production-ready. Stable `v0.2.0` publication remains blocked until `npm run release:policy:assert` passes. The existing `v0.1.1` prerelease predates Draft Intelligence v2 and should be treated as a historical beta.
+The owner-authorized `v0.2.0-preview.2` release is an uncertified prerelease for friend testing. It must remain visibly labeled as unregistered, unapproved, unsigned, and not production-ready. Stable `v0.2.0` publication remains blocked until `npm run release:policy:assert` passes. The existing `v0.1.1` prerelease predates Draft Intelligence v2 and should be treated as a historical beta.
 
 Expected release artifacts:
 
