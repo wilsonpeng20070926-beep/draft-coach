@@ -17,6 +17,7 @@ Use this checklist before making the repository public or publishing binaries.
 - [ ] Review current OP.GG data-use terms.
 - [ ] Confirm Data Dragon attribution and asset usage posture.
 - [ ] Verify current Leaguepedia Cargo API/request, attribution, caching, and snapshot redistribution terms.
+- [ ] Keep `PRO_SNAPSHOT_FETCH_ENABLED` unset until the Leaguepedia API-access review is recorded and approved.
 - [ ] Keep `PRO_SNAPSHOT_PUBLISH_ENABLED` unset until the Leaguepedia redistribution review is recorded and approved.
 - [ ] Confirm no Oracle's Elixir or other noncommercial-only data is release-critical or included in published assets.
 - [ ] `npm run release:policy:report`

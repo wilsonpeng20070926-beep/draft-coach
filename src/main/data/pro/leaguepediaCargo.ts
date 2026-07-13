@@ -1,4 +1,5 @@
 import type { ChampionCatalog } from "../../catalog/championCatalog";
+import { APP_VERSION } from "../../../shared/appInfo";
 import type {
   CompetitionTier,
   NormalizedProDraft,
@@ -54,7 +55,7 @@ class NonRetryableCargoError extends Error {}
 
 const DEFAULT_ENDPOINT = "https://lol.fandom.com/api.php";
 const DEFAULT_USER_AGENT =
-  "DraftCoach-ProSnapshot/0.1 (+https://github.com/wilsonpeng20070926-beep/draft-coach)";
+  `DraftCoach-ProSnapshot/${APP_VERSION} (+https://github.com/wilsonpeng20070926-beep/draft-coach)`;
 const DEFAULT_PAGE_SIZE = 100;
 const roleOrder: Role[] = ["top", "jungle", "middle", "bottom", "utility"];
 const pickOrders: Record<ProSide, number[]> = {

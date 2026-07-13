@@ -17,6 +17,7 @@ concurrency:
 jobs:
   build-snapshot:
     name: Fetch, validate, and build snapshot
+    if: ${{ vars.PRO_SNAPSHOT_FETCH_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
