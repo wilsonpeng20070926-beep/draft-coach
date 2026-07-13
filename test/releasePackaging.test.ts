@@ -98,6 +98,9 @@ describe("release packaging", () => {
     expect(workflow).toContain('if [[ "$GITHUB_REF_NAME" == *-preview.* ]]');
     expect(workflow).toContain("npm run release:policy:preview");
     expect(workflow).toContain("npm run release:policy:assert");
+    expect(workflow).toContain(
+      "name: Install Electron runtime\n        run: node node_modules/electron/install.js",
+    );
     expect(workflow).toContain("prerelease: ${{ contains(github.ref_name, '-preview.') }}");
     expect(workflow).toContain("draft: ${{ !contains(github.ref_name, '-preview.') }}");
     expect(workflow).toContain("This is an uncertified, unsigned friend preview");
