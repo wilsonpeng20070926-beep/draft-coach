@@ -1,6 +1,8 @@
 # Release Checklist
 
-Use this checklist before making the repository public or publishing binaries.
+Use this checklist before publishing binaries or materially expanding public distribution.
+
+Use [Release Approval Requests](RELEASE_APPROVAL_REQUESTS.md) for the copy-ready Riot, Leaguepedia/Fandom, and OP.GG request text and evidence fields.
 
 ## Safety
 
