@@ -9,6 +9,7 @@ import {
   StaticSnapshotProDataSource,
   type ProSnapshotFetch,
 } from "../src/main/data/pro/proDataSource";
+import { APP_VERSION } from "../src/shared/appInfo";
 import type { NormalizedProDraft, ProDataSnapshot } from "../src/shared/proData";
 
 const directories: string[] = [];
@@ -146,12 +147,16 @@ describe("static professional data source", () => {
     const directory = await tempDirectory();
     const remote = snapshot("compressed", 2);
     const bytes = gzipSync(Buffer.from(canonicalStringify(remote)));
+    let requestInit: RequestInit | undefined;
     const source = new StaticSnapshotProDataSource({
       cacheDirectory: directory,
       remoteUrl: "https://example.test/pro-snapshot.json.gz",
       refreshIntervalMs: 0,
       now: () => now,
-      fetchImpl: async () => responseBytes(bytes),
+      fetchImpl: async (_input, init) => {
+        requestInit = init;
+        return responseBytes(bytes);
+      },
     });
 
     await source.start();
@@ -159,6 +164,9 @@ describe("static professional data source", () => {
 
     expect(source.getSnapshot()?.metadata.checksum).toBe(remote.metadata.checksum);
     expect(source.getStatus().state).toBe("ready");
+    expect(requestInit?.headers).toMatchObject({
+      "User-Agent": `DraftCoach-Desktop/${APP_VERSION}`,
+    });
     source.stop();
   });
 });

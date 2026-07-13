@@ -5,6 +5,7 @@ import {
   LeaguepediaCargoAdapter,
   type CargoFetch,
 } from "../src/main/data/pro/leaguepediaCargo";
+import { APP_VERSION } from "../src/shared/appInfo";
 import { createFixtureCatalog } from "./fixtures/championFixture";
 
 const fixture = JSON.parse(
@@ -100,7 +101,7 @@ describe("Leaguepedia Cargo adapter", () => {
     expect(delays).toEqual([500]);
     expect(headers[0]).toMatchObject({
       "If-None-Match": '"previous"',
-      "User-Agent": expect.stringContaining("DraftCoach-ProSnapshot"),
+      "User-Agent": `DraftCoach-ProSnapshot/${APP_VERSION} (+https://github.com/wilsonpeng20070926-beep/draft-coach)`,
     });
   });
 

@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
 import { join } from "node:path";
+import { APP_VERSION } from "../../../shared/appInfo";
 import type {
   ProDataSnapshot,
   ProDataStatus,
@@ -197,7 +198,7 @@ export class StaticSnapshotProDataSource implements ProDataSource {
         method: "GET",
         headers: {
           Accept: "application/json, application/gzip",
-          "User-Agent": "DraftCoach-Desktop/0.1",
+          "User-Agent": `DraftCoach-Desktop/${APP_VERSION}`,
           ...(this.etag ? { "If-None-Match": this.etag } : {}),
         },
         signal: controller.signal,

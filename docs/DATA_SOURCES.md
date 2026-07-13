@@ -44,7 +44,7 @@ Attribution:
 - Endpoint: https://lol.fandom.com/api.php
 - Leaguepedia: https://lol.fandom.com/wiki/League_of_Legends_Esports_Wiki
 
-The scheduled workflow derives the current three-patch window from Data Dragon, builds and validates the snapshot every three hours, and supports a manual patch-window override. It publishes only normalized aggregates and compact replay records, never the raw Cargo response. Desktop clients verify the schema and SHA-256 checksum before atomically replacing their local last-known-good cache. If no valid snapshot is present, recommendations continue in ranked-only mode.
+The snapshot workflow is disabled by default. After an approved API-access review, setting the repository variable `PRO_SNAPSHOT_FETCH_ENABLED` to `true` enables its three-hour schedule and manual patch-window override. When enabled, it derives the current three-patch window from Data Dragon and uploads a private 14-day artifact containing only normalized aggregates and compact replay records, never the raw Cargo response. Desktop clients verify the schema and SHA-256 checksum before atomically replacing their local last-known-good cache. If no valid snapshot is present, recommendations continue in ranked-only mode.
 
 Direct Cargo access from the desktop is disabled by default. It is available only through explicit operator configuration and is independently rate-limited.
 
@@ -52,7 +52,7 @@ Leaguepedia's API documentation describes the API as a courtesy without a guaran
 
 ### Release policy gate
 
-Leaguepedia API access, attribution, caching, and redistribution terms must be re-verified before a public beta. Snapshot release publishing remains disabled unless the repository variable `PRO_SNAPSHOT_PUBLISH_ENABLED` is explicitly set to `true` after that review. This is a release gate; the implementation does not assume redistribution permission.
+Leaguepedia API access, attribution, caching, and redistribution terms must be re-verified before a public beta. Automated fetching remains disabled unless `PRO_SNAPSHOT_FETCH_ENABLED` is explicitly set to `true` after the API-access review. Snapshot release publishing remains separately disabled unless `PRO_SNAPSHOT_PUBLISH_ENABLED` is explicitly set to `true` after the redistribution review. These are release gates; the implementation does not assume access or redistribution permission.
 
 Oracle's Elixir is not used by the release pipeline or desktop app. Any future optional import experiment must remain non-release-critical and must honor its stated noncommercial limitation. A monetized release requires a dedicated data-license review and removal or replacement of any noncommercial-only source.
 

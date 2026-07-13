@@ -73,4 +73,20 @@ describe("release packaging", () => {
     expect(normalizedWorkflow).not.toContain("softprops/action-gh-release");
     expect(normalizedWorkflow).not.toContain("npm run release:policy:assert");
   });
+
+  it("keeps professional snapshot fetching and publishing approval-gated", async () => {
+    const workflow = (
+      await readFile(
+        join(process.cwd(), ".github/workflows/pro-data-snapshot.yml"),
+        "utf8",
+      )
+    ).replace(/\r\n/g, "\n");
+
+    expect(workflow).toContain(
+      "if: ${{ vars.PRO_SNAPSHOT_FETCH_ENABLED == 'true' }}",
+    );
+    expect(workflow).toContain(
+      "if: ${{ vars.PRO_SNAPSHOT_PUBLISH_ENABLED == 'true' }}",
+    );
+  });
 });
