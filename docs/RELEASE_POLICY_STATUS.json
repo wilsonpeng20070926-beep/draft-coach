@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-07-11",
+  "publicRelease": [
+    {
+      "id": "riot-product-registration",
+      "status": "blocked",
+      "summary": "Riot requires player-facing products to be registered, including products that do not use an official documented API.",
+      "ownerAction": "Register Draft Coach in the Riot Developer Portal and record an Approved or Acknowledged product status before any public beta.",
+      "sourceUrls": [
+        "https://developer.riotgames.com/docs/lol",
+        "https://developer.riotgames.com/docs/portal"
+      ]
+    },
+    {
+      "id": "leaguepedia-snapshot-redistribution",
+      "status": "blocked",
+      "summary": "Leaguepedia documents Cargo access as a courtesy, warns that the API is unstable, and publishes community content under CC BY-SA 3.0; no project-specific snapshot redistribution approval is recorded.",
+      "ownerAction": "Confirm attribution, share-alike obligations, automated request posture, and redistribution of derived aggregate snapshot assets with Leaguepedia/Fandom before enabling snapshot publishing.",
+      "sourceUrls": [
+        "https://lol.fandom.com/wiki/Help:Leaguepedia_API",
+        "https://lol.fandom.com/wiki/Category:Developer_Documentation"
+      ]
+    },
+    {
+      "id": "opgg-public-use-review",
+      "status": "blocked",
+      "summary": "OP.GG asks reusers to cite the source and avoid excessive requests, and warns that commercial use without citation may be restricted.",
+      "ownerAction": "Obtain and record a public-distribution review for the MCP-backed OP.GG request volume, caching, citation, and redistribution posture.",
+      "sourceUrls": [
+        "https://help.op.gg/hc/en-us/articles/31091405109401-Can-I-use-OP-GG-data",
+        "https://op.gg/lol/policies/agreement"
+      ]
+    },
+    {
+      "id": "data-dragon-and-riot-notice",
+      "status": "approved",
+      "summary": "Riot documents Data Dragon assets for third-party developers, and the required non-endorsement notice is present in the app and repository documentation.",
+      "ownerAction": "Recheck the current Riot policy and notice wording at each public release.",
+      "sourceUrls": [
+        "https://developer.riotgames.com/docs/lol#data-dragon",
+        "https://developer.riotgames.com/docs/lol"
+      ]
+    },
+    {
+      "id": "oracle-elixir-release-exclusion",
+      "status": "approved",
+      "summary": "Oracle's Elixir is not imported, bundled, fetched, or required by the desktop app or release pipeline.",
+      "ownerAction": "Keep Oracle's Elixir and any other noncommercial-only dataset outside release-critical paths unless a dedicated license review approves it.",
+      "sourceUrls": [
+        "https://lol.timsevenhuysen.com/about/"
+      ]
+    },
+    {
+      "id": "privacy-and-source-wording",
+      "status": "approved",
+      "summary": "The repository documents local data access, cache contents, external requests, source freshness, ranked-only fallback, and the absence of automatic telemetry.",
+      "ownerAction": "Repeat the privacy review whenever collection, feedback, account data, or telemetry behavior changes.",
+      "sourceUrls": [
+        "docs/PRIVACY.md",
+        "docs/DATA_SOURCES.md"
+      ]
+    }
+  ],
+  "commercialRelease": [
+    {
+      "id": "commercial-legal-and-data-license-review",
+      "status": "blocked",
+      "summary": "No legal opinion or provider-specific commercial data license approval is recorded.",
+      "ownerAction": "Before monetization, obtain a dedicated legal/data-license review, confirm Riot monetization requirements, and remove or replace every noncommercial-only or unapproved data dependency.",
+      "sourceUrls": [
+        "https://developer.riotgames.com/docs/lol",
+        "docs/DATA_SOURCES.md"
+      ]
+    }
+  ]
+}

@@ -16,6 +16,13 @@ Use this checklist before making the repository public or publishing binaries.
 - [ ] Include Riot non-endorsement notice in README and app.
 - [ ] Review current OP.GG data-use terms.
 - [ ] Confirm Data Dragon attribution and asset usage posture.
+- [ ] Verify current Leaguepedia Cargo API/request, attribution, caching, and snapshot redistribution terms.
+- [ ] Keep `PRO_SNAPSHOT_PUBLISH_ENABLED` unset until the Leaguepedia redistribution review is recorded and approved.
+- [ ] Confirm no Oracle's Elixir or other noncommercial-only data is release-critical or included in published assets.
+- [ ] `npm run release:policy:report`
+- [ ] Resolve every blocked public gate in `docs/RELEASE_POLICY_STATUS.json`.
+- [ ] `npm run release:policy:assert`
+- [ ] Before monetization, obtain the dedicated legal/data-license review and run `npm run release:policy:commercial`.
 
 ## Quality
 
@@ -23,6 +30,10 @@ Use this checklist before making the repository public or publishing binaries.
 - [ ] `npm run typecheck`
 - [ ] `npm test`
 - [ ] `npm run build`
+- [ ] `npm run evaluation:test`
+- [ ] Run leakage-safe historical replay on an approved local dataset and attach the four-configuration report.
+- [ ] Record a fresh cold/warm latency and memory sample in `docs/CALIBRATION_REPORT.md`.
+- [ ] Run `npm run pro:validate` against both generated professional snapshot payloads.
 - [ ] `npm audit --omit=dev`
 - [ ] `npm audit`
 - [ ] Review Electron runtime advisories; Electron is a devDependency but is bundled into release artifacts.
@@ -45,6 +56,8 @@ Use this checklist before making the repository public or publishing binaries.
 - [ ] Confirm enemy dive/assassin threats can create risky warning chips.
 - [ ] Expand `Why` and confirm score deltas, synergy breakdown, and threat breakdown are readable.
 - [ ] Move a settings slider and confirm recommendations rerank without a loading phase.
+- [ ] Complete at least one anonymized `docs/EXPERT_REVIEW_WORKSHEET.md` for each supported role.
+- [ ] Review motivated wins and regressions against ranked-only without treating the observed pick as uniquely correct.
 
 ## Release Artifacts
 

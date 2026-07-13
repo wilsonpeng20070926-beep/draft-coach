@@ -8,7 +8,12 @@ import type {
   TeamComposition,
   TeamContext,
 } from "../../shared/championAttributes";
-import type { ChampionRef, DraftPlayer, DraftState } from "../../shared/types";
+import type {
+  ChampionRef,
+  DraftPlayer,
+  DraftState,
+  DraftTarget,
+} from "../../shared/types";
 
 interface TeamMember {
   champion: ChampionRef;
@@ -38,9 +43,10 @@ const threatOrder: CompThreatKind[] = [
 export function buildTeamContext(
   draft: DraftState,
   getAttributes: GetChampionAttributes,
+  target?: DraftTarget | null,
 ): TeamContext {
-  const allies = collectTeamMembers(draft.allies, getAttributes, false);
-  const enemies = collectTeamMembers(draft.enemies, getAttributes, true);
+  const allies = collectTeamMembers(draft.allies, getAttributes, false, target);
+  const enemies = collectTeamMembers(draft.enemies, getAttributes, true, target);
   const ally = buildComposition(allies);
   const enemy = buildComposition(enemies);
 
@@ -57,9 +63,15 @@ function collectTeamMembers(
   players: DraftPlayer[],
   getAttributes: GetChampionAttributes,
   useRoleConfidence: boolean,
+  target?: DraftTarget | null,
 ): TeamMember[] {
   return players
-    .filter((player): player is DraftPlayer & { champion: ChampionRef } => player.champion !== null)
+    .filter(
+      (player): player is DraftPlayer & { champion: ChampionRef } =>
+        player.pickState === "locked" &&
+        player.champion !== null &&
+        !(target && player.side === target.side && player.cellId === target.cellId),
+    )
     .map((player) => ({
       champion: player.champion,
       attributes: getAttributes(player.champion),

@@ -15,6 +15,9 @@ export interface AppConfig {
   pickRateFloor: number;
   shrinkK: number;
   minChipConfidence: number;
+  favoriteTeams: string[];
+  proEvidenceEnabled: boolean;
+  proInfluence: number;
 }
 
 export type AppConfigPatch = Partial<Omit<AppConfig, "weights">> & {
@@ -26,7 +29,7 @@ export interface SelectOption {
   value: string;
 }
 
-export const APP_CONFIG_VERSION = 2;
+export const APP_CONFIG_VERSION = 5;
 
 export const FACTOR_WEIGHT_PRESETS = {
   coach: {
@@ -62,11 +65,11 @@ export const FACTOR_WEIGHT_PRESETS = {
 export const DEFAULT_APP_CONFIG: AppConfig = {
   version: APP_CONFIG_VERSION,
   weights: {
-    meta: 0.25,
-    laneCounter: 0.5,
-    teamCounter: 0,
-    synergy: 0.25,
-    compFit: 0,
+    meta: 0.55,
+    laneCounter: 0.75,
+    teamCounter: 0.35,
+    synergy: 0.55,
+    compFit: 0.3,
   },
   region: "global",
   rank: "emerald_plus",
@@ -74,6 +77,9 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
   pickRateFloor: 0.005,
   shrinkK: 1000,
   minChipConfidence: 0.58,
+  favoriteTeams: [],
+  proEvidenceEnabled: true,
+  proInfluence: 1,
 };
 
 export const INTERNAL_DATA_CONFIG = {
@@ -140,6 +146,17 @@ export function sanitizeAppConfig(value: unknown): AppConfig {
       1,
       DEFAULT_APP_CONFIG.minChipConfidence,
     ),
+    favoriteTeams: sanitizeFavoriteTeams(migrated.favoriteTeams),
+    proEvidenceEnabled: sanitizeBoolean(
+      migrated.proEvidenceEnabled,
+      DEFAULT_APP_CONFIG.proEvidenceEnabled,
+    ),
+    proInfluence: clampNumber(
+      migrated.proInfluence,
+      0,
+      1,
+      DEFAULT_APP_CONFIG.proInfluence,
+    ),
   };
 }
 
@@ -156,7 +173,10 @@ export function mergeAppConfig(current: AppConfig, patch: AppConfigPatch): AppCo
 
 export function isWeightOnlyPatch(patch: AppConfigPatch): boolean {
   const keys = Object.keys(patch);
-  return keys.length === 1 && keys[0] === "weights";
+  return (
+    keys.length > 0 &&
+    keys.every((key) => key === "weights" || key === "proInfluence")
+  );
 }
 
 function migrateConfig(record: Record<string, unknown>): Record<string, unknown> {
@@ -185,6 +205,25 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
   return Math.min(max, Math.max(min, numeric));
 }
 
+function sanitizeBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function sanitizeFavoriteTeams(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return [...new Set(
+    value
+      .filter((team): team is string => typeof team === "string")
+      .map((team) => team.trim())
+      .filter(Boolean),
+  )]
+    .sort((left, right) => left.localeCompare(right))
+    .slice(0, 12);
 }

@@ -2,14 +2,30 @@ import type { LaneMetaEntry, MetaDataSource } from "../data/metaDataSource";
 import type { FactorWeights } from "../../shared/config";
 import type { TeamContext } from "../../shared/championAttributes";
 import type {
+  AnticipatedThreat,
   ChampionRef,
   DraftState,
+  DraftTarget,
   FactorContribution,
+  PickEvaluation,
   Recommendation,
+  RecommendationCategory,
   ScoreContribution,
+  EvidenceBalance,
 } from "../../shared/types";
-import { buildCandidatePool, type CandidatePoolInput } from "./candidatePool";
+import { draftTargetKey } from "../draft/targetSelection";
+import {
+  buildCandidatePool,
+  createTargetFallbackEntry,
+  type CandidatePoolInput,
+} from "./candidatePool";
 import { clamp01, clampDelta, metaBaseSpread } from "./scoringConstants";
+import type { ProScoringProvider } from "./proScoring";
+import {
+  assessRecommendationRisk,
+  calculateEvidenceBalance,
+  projectRecommendationCategories,
+} from "./categoryProjection";
 
 export interface FactorModule {
   key: string;
@@ -17,7 +33,9 @@ export interface FactorModule {
   contribute(
     candidate: ChampionRef,
     draft: DraftState,
+    target: DraftTarget,
     ctx: TeamContext,
+    threats: AnticipatedThreat[],
   ): Promise<FactorContribution>;
 }
 
@@ -30,10 +48,13 @@ export interface RecommendationEngineOptions {
   shrinkK: number;
   pickRateFloor: number;
   metaRolePresenceFloor: number;
+  proEvidenceEnabled?: boolean;
+  proInfluence?: number;
 }
 
 export type TeamContextProvider = (
   draft: DraftState,
+  target: DraftTarget,
   options: RecommendationEngineOptions,
 ) => Promise<TeamContext>;
 
@@ -41,8 +62,11 @@ export type CandidatePoolProvider = (input: CandidatePoolInput) => Promise<LaneM
 
 export interface RecommendationResult {
   recommendations: Recommendation[];
+  evaluation: PickEvaluation | null;
   limitedDataNote: string | null;
   teamContext: TeamContext | null;
+  categories: RecommendationCategory[];
+  evidenceBalance: EvidenceBalance;
 }
 
 interface ScoredCandidate {
@@ -51,11 +75,17 @@ interface ScoredCandidate {
   factorFailure: boolean;
 }
 
+interface LatestTargetScore {
+  scored: ScoredCandidate[];
+  hadFactorFailure: boolean;
+  teamContext: TeamContext;
+  targetPlayer: DraftState["allies"][number];
+}
+
 export class RecommendationEngine {
   private readonly getOptions: () => RecommendationEngineOptions;
-  private latestScoredCandidates: ScoredCandidate[] | null = null;
-  private latestHadFactorFailure = false;
-  private latestTeamContext: TeamContext | null = null;
+  private readonly latestByTarget = new Map<string, LatestTargetScore>();
+  private latestTargetKey: string | null = null;
 
   constructor(
     private readonly metaSource: MetaDataSource,
@@ -63,84 +93,136 @@ export class RecommendationEngine {
     options: RecommendationEngineOptions | (() => RecommendationEngineOptions),
     private readonly createTeamContext: TeamContextProvider = async () => createNeutralTeamContext(),
     private readonly createCandidatePool: CandidatePoolProvider = buildCandidatePool,
+    private readonly proScoring: ProScoringProvider | null = null,
   ) {
     this.getOptions = typeof options === "function" ? options : () => options;
   }
 
-  async recommend(draft: DraftState): Promise<RecommendationResult> {
+  async recommend(
+    draft: DraftState,
+    target: DraftTarget,
+    threats: AnticipatedThreat[] = [],
+  ): Promise<RecommendationResult> {
     const options = this.getOptions();
+    const targetPlayer = draft.allies.find((ally) => ally.cellId === target.cellId) ?? null;
 
-    if (draft.phase !== "champSelect" || !draft.localPlayer?.role) {
-      this.latestScoredCandidates = null;
-      this.latestHadFactorFailure = false;
-      this.latestTeamContext = null;
+    if (
+      draft.phase !== "champSelect" ||
+      target.side !== "ally" ||
+      target.purpose !== "recommend" ||
+      !targetPlayer ||
+      targetPlayer.role !== target.role
+    ) {
       return {
         recommendations: [],
+        evaluation: null,
         limitedDataNote: null,
         teamContext: null,
+        categories: [],
+        evidenceBalance: emptyEvidenceBalance(),
       };
     }
 
-    const role = draft.localPlayer.role;
     let laneMeta: LaneMetaEntry[];
 
     try {
-      laneMeta = await this.metaSource.getLaneMeta(role, options.region, options.rank);
+      laneMeta = await this.metaSource.getLaneMeta(target.role, options.region, options.rank);
     } catch {
-      this.latestScoredCandidates = null;
-      this.latestHadFactorFailure = false;
-      this.latestTeamContext = null;
       return {
         recommendations: [],
+        evaluation: null,
         limitedDataNote: "OP.GG lane meta is unavailable right now.",
         teamContext: null,
+        categories: [],
+        evidenceBalance: emptyEvidenceBalance(),
       };
     }
 
-    const ctx = await this.createContext(draft, options);
-    this.latestTeamContext = ctx;
-    const candidates = await this.createCandidatePool({
+    const ctx = await this.createContext(draft, target, options);
+    const proEntries = this.safeProCandidateEntries(
       laneMeta,
-      draft,
-      ctx,
+      target.role,
       options,
-      metaSource: this.metaSource,
-      scoreMeta: (entry) => scoreLaneMetaEntry(entry, options),
-    });
+    );
+    const candidates =
+      targetPlayer.pickState === "locked" && targetPlayer.champion
+        ? [
+            laneMeta.find(
+              (entry) => entry.champion.id === targetPlayer.champion?.id,
+            ) ?? createTargetFallbackEntry(targetPlayer.champion),
+          ]
+        : await this.createCandidatePool({
+            laneMeta,
+            draft,
+            target,
+            threats,
+            ctx,
+            options,
+            metaSource: this.metaSource,
+            scoreMeta: (entry) => scoreLaneMetaEntry(entry, options),
+            proEntries,
+          });
     const scored = await Promise.all(
-      candidates.map((entry) => this.scoreCandidate(entry, draft, ctx)),
+      candidates.map((entry) =>
+        this.scoreCandidate(entry, draft, target, ctx, threats, options),
+      ),
     );
     const hasLimitedData = scored.some((item) => item.factorFailure);
-    this.latestScoredCandidates = scored;
-    this.latestHadFactorFailure = hasLimitedData;
+    const key = draftTargetKey(target);
+    this.latestByTarget.set(key, {
+      scored,
+      hadFactorFailure: hasLimitedData,
+      teamContext: ctx,
+      targetPlayer,
+    });
+    this.latestTargetKey = key;
 
-    return this.combineScoredCandidates(scored, hasLimitedData, options, ctx);
+    return this.combineScoredCandidates(
+      scored,
+      hasLimitedData,
+      options,
+      ctx,
+      targetPlayer,
+    );
   }
 
-  rerankLatest(): RecommendationResult | null {
-    if (!this.latestScoredCandidates) {
+  rerankLatest(target?: DraftTarget): RecommendationResult | null {
+    const key = target ? draftTargetKey(target) : this.latestTargetKey;
+    const latest = key ? this.latestByTarget.get(key) : null;
+
+    if (!latest) {
       return null;
     }
 
     return this.combineScoredCandidates(
-      this.latestScoredCandidates,
-      this.latestHadFactorFailure,
+      latest.scored,
+      latest.hadFactorFailure,
       this.getOptions(),
-      this.latestTeamContext,
+      latest.teamContext,
+      latest.targetPlayer,
     );
   }
 
   private async scoreCandidate(
     entry: LaneMetaEntry,
     draft: DraftState,
+    target: DraftTarget,
     ctx: TeamContext,
+    threats: AnticipatedThreat[],
+    options: RecommendationEngineOptions,
   ): Promise<ScoredCandidate> {
     const enabledFactors = this.factors.filter((factor) => factor.enabled);
     const factorResults = await Promise.all(
       enabledFactors.map(async (factor) => {
         try {
           return {
-            contribution: await factor.contribute(entry.champion, draft, ctx),
+            contribution: await factor.contribute(
+              entry.champion,
+              draft,
+              target,
+              ctx,
+              threats,
+            ),
             failed: false,
           };
         } catch {
@@ -156,22 +238,65 @@ export class RecommendationEngine {
         }
       }),
     );
+    const proContributions = this.safeProContributions(
+      entry.champion,
+      draft,
+      target,
+      options,
+    );
 
     return {
       entry,
-      factorContributions: factorResults.map((result) => result.contribution),
+      factorContributions: [
+        ...factorResults.map((result) => result.contribution),
+        ...proContributions,
+      ],
       factorFailure: factorResults.some((result) => result.failed),
     };
   }
 
   private async createContext(
     draft: DraftState,
+    target: DraftTarget,
     options: RecommendationEngineOptions,
   ): Promise<TeamContext> {
     try {
-      return await this.createTeamContext(draft, options);
+      return await this.createTeamContext(draft, target, options);
     } catch {
       return createNeutralTeamContext();
+    }
+  }
+
+  private safeProCandidateEntries(
+    laneMeta: LaneMetaEntry[],
+    role: DraftTarget["role"],
+    options: RecommendationEngineOptions,
+  ): LaneMetaEntry[] {
+    if (options.proEvidenceEnabled === false || !this.proScoring) {
+      return [];
+    }
+
+    try {
+      return this.proScoring.candidateEntries(laneMeta, role);
+    } catch {
+      return [];
+    }
+  }
+
+  private safeProContributions(
+    candidate: ChampionRef,
+    draft: DraftState,
+    target: DraftTarget,
+    options: RecommendationEngineOptions,
+  ): FactorContribution[] {
+    if (options.proEvidenceEnabled === false || !this.proScoring) {
+      return [];
+    }
+
+    try {
+      return this.proScoring.contributions(candidate, draft, target);
+    } catch {
+      return [];
     }
   }
 
@@ -180,42 +305,190 @@ export class RecommendationEngine {
     hasLimitedData: boolean,
     options: RecommendationEngineOptions,
     teamContext: TeamContext | null,
+    targetPlayer: DraftState["allies"][number],
   ): RecommendationResult {
-    const recommendations = scored
-      .map((candidate) => createRecommendation(candidate, options))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, options.topN);
+    const allRecommendations = scored
+      .map((candidate) => createRecommendation(candidate, options, teamContext))
+      .sort((a, b) => b.total - a.total || a.champion.id - b.champion.id);
+    const evaluation = createTargetPickEvaluation(allRecommendations, targetPlayer);
+    const categories = targetPlayer.pickState === "locked"
+      ? []
+      : projectRecommendationCategories(allRecommendations);
+    const overall = categories.find((category) => category.key === "overall")?.recommendations ?? [];
+    const recommendations =
+      targetPlayer.pickState === "locked"
+        ? []
+        : overall.slice(0, options.topN);
+    const evidenceBalance = calculateEvidenceBalance(recommendations);
     warnOnConstantSynergy(recommendations);
 
     return {
       recommendations,
+      evaluation,
       limitedDataNote: createLimitedDataNote(hasLimitedData, options.weights),
       teamContext,
+      categories,
+      evidenceBalance,
     };
   }
 }
 
 export class RecommendationRunner {
   private latestRunId = 0;
+  private latestTargets: DraftTarget[] = [];
+  private pendingHoverTimer: ReturnType<typeof setTimeout> | null = null;
+  private resolvePendingHover: ((active: boolean) => void) | null = null;
 
-  constructor(private readonly engine: RecommendationEngine) {}
+  constructor(
+    private readonly engine: RecommendationEngine,
+    private readonly hoverDebounceMs = HOVER_RECOMMENDATION_DEBOUNCE_MS,
+  ) {}
 
-  async recommendLatest(draft: DraftState): Promise<RecommendationResult | null> {
+  async recommendLatest(
+    draft: DraftState,
+    target: DraftTarget,
+    threats: AnticipatedThreat[] = [],
+  ): Promise<RecommendationResult | null> {
+    const results = await this.recommendTargetsLatest(draft, [target], threats);
+
+    return results?.[0] ?? null;
+  }
+
+  async recommendTargetsLatest(
+    draft: DraftState,
+    targets: DraftTarget[],
+    threats: AnticipatedThreat[] = [],
+  ): Promise<RecommendationResult[] | null> {
     const runId = (this.latestRunId += 1);
-    const result = await this.engine.recommend(draft);
+    this.cancelPendingHover();
+    this.latestTargets = [...targets];
 
-    return runId === this.latestRunId ? result : null;
+    if (targets.some((target) => targetIsHovering(draft, target))) {
+      const stillCurrent = await this.waitForHoverDebounce(runId);
+
+      if (!stillCurrent) {
+        return null;
+      }
+    }
+
+    const results = await Promise.all(
+      targets.map((target) => this.engine.recommend(draft, target, threats)),
+    );
+
+    return runId === this.latestRunId ? results : null;
   }
 
   rerankLatest(): RecommendationResult | null {
     this.latestRunId += 1;
-    return this.engine.rerankLatest();
+    this.cancelPendingHover();
+    const target = this.latestTargets[0];
+
+    return target ? this.engine.rerankLatest(target) : this.engine.rerankLatest();
   }
+
+  rerankTargetsLatest(): RecommendationResult[] {
+    this.latestRunId += 1;
+    this.cancelPendingHover();
+
+    return this.latestTargets
+      .map((target) => this.engine.rerankLatest(target))
+      .filter((result): result is RecommendationResult => result !== null);
+  }
+
+  private waitForHoverDebounce(runId: number): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      this.resolvePendingHover = resolve;
+      this.pendingHoverTimer = setTimeout(() => {
+        this.pendingHoverTimer = null;
+        this.resolvePendingHover = null;
+        resolve(runId === this.latestRunId);
+      }, this.hoverDebounceMs);
+    });
+  }
+
+  private cancelPendingHover(): void {
+    if (this.pendingHoverTimer) {
+      clearTimeout(this.pendingHoverTimer);
+      this.pendingHoverTimer = null;
+    }
+
+    this.resolvePendingHover?.(false);
+    this.resolvePendingHover = null;
+  }
+}
+
+export const HOVER_RECOMMENDATION_DEBOUNCE_MS = 400;
+
+function targetIsHovering(draft: DraftState, target: DraftTarget): boolean {
+  return draft.allies.some(
+    (ally) => ally.cellId === target.cellId && ally.pickState === "hovering",
+  );
+}
+
+function createTargetPickEvaluation(
+  recommendations: Recommendation[],
+  targetPlayer: DraftState["allies"][number],
+): PickEvaluation | null {
+  if (
+    !targetPlayer.champion ||
+    (targetPlayer.pickState !== "hovering" && targetPlayer.pickState !== "locked")
+  ) {
+    return null;
+  }
+
+  const recommendation = recommendations.find(
+    (candidate) => candidate.champion.id === targetPlayer.champion?.id,
+  );
+
+  if (!recommendation) {
+    return null;
+  }
+
+  const chips = recommendation.contributions.flatMap(
+    (contribution) => contribution.reasonChips ?? [],
+  );
+  const teamFitKinds = new Set(["synergy", "comp-fit"]);
+  const strengths = unique(
+    chips
+      .filter((chip) => chip.polarity === "positive" && !teamFitKinds.has(chip.kind))
+      .map((chip) => chip.text),
+  );
+  const risks = unique(
+    chips.filter((chip) => chip.polarity === "negative").map((chip) => chip.text),
+  );
+  const teamFit = unique(
+    chips.filter((chip) => teamFitKinds.has(chip.kind)).map((chip) => chip.text),
+  );
+
+  if (strengths.length === 0) {
+    const metaReason = recommendation.contributions.find(
+      (contribution) => contribution.factor === "meta",
+    )?.reasons[0];
+
+    if (metaReason) {
+      strengths.push(metaReason);
+    }
+  }
+
+  return {
+    champion: targetPlayer.champion,
+    state: targetPlayer.pickState,
+    total: recommendation.total,
+    strengths,
+    risks,
+    teamFit,
+    evidence: recommendation.contributions,
+  };
+}
+
+function unique(values: string[]): string[] {
+  return [...new Set(values)];
 }
 
 function createRecommendation(
   scored: ScoredCandidate,
   options: RecommendationEngineOptions,
+  teamContext: TeamContext | null,
 ): Recommendation {
   const baseContribution = createMetaContribution(scored.entry, options);
   const allWeightsZero = areAllWeightsZero(options.weights);
@@ -229,10 +502,10 @@ function createRecommendation(
   const activeFactorContributions = scored.factorContributions
     .map((contribution) => ({
       contribution,
-      weight: getFactorWeight(contribution.factor, options.weights),
+      weight: getContributionWeight(contribution, options, allWeightsZero),
       effectiveDelta:
         clampDelta(contribution.delta) *
-        getFactorWeight(contribution.factor, options.weights) *
+        getContributionWeight(contribution, options, allWeightsZero) *
         clamp01(contribution.confidence),
     }))
     .filter((item) => item.weight > 0);
@@ -255,11 +528,28 @@ function createRecommendation(
     champion: scored.entry.champion,
     total: clamp01(total),
     contributions: outputContributions,
+    risk: assessRecommendationRisk(
+      { total: clamp01(total), contributions: outputContributions },
+      scored.entry,
+      teamContext ?? createNeutralTeamContext(),
+    ),
   };
 }
 
 export function createMetaBase(metaScore: number, metaWeight: number): number {
   return clamp01(0.5 + (metaScore - 0.5) * metaBaseSpread(metaWeight));
+}
+
+function getContributionWeight(
+  contribution: FactorContribution,
+  options: RecommendationEngineOptions,
+  allWeightsZero: boolean,
+): number {
+  if (contribution.factor.startsWith("pro")) {
+    return allWeightsZero ? 0 : clamp01(options.proInfluence ?? 1);
+  }
+
+  return getFactorWeight(contribution.factor, options.weights);
 }
 
 function getFactorWeight(factor: string, weights: FactorWeights): number {
@@ -313,6 +603,8 @@ function toScoreContribution(
     confidence: contribution.confidence,
     reasonChips: contribution.reasons,
     breakdown: contribution.breakdown,
+    source: contribution.source ?? "ranked",
+    proEvidence: contribution.proEvidence,
   };
 }
 
@@ -377,6 +669,22 @@ export function createMetaContribution(
     pickRateFloor: 0.005,
   },
 ): ScoreContribution {
+  if (
+    entry.dataQuality === "target-fallback" ||
+    entry.dataQuality === "pro-supported"
+  ) {
+    return {
+      factor: "meta",
+      score: 0.5,
+      reasons: [
+        entry.dataQuality === "pro-supported"
+          ? "Ranked meta: no role-specific baseline"
+          : "Meta: no role-specific ranked baseline",
+      ],
+      source: "ranked",
+    };
+  }
+
   const adjustedWinRate = adjustLaneMetaWinRate(entry, options.shrinkK);
   const score = scoreLaneMetaEntry(entry, options);
 
@@ -384,6 +692,16 @@ export function createMetaContribution(
     factor: "meta",
     score,
     reasons: [formatMetaReason(entry, adjustedWinRate)],
+    source: "ranked",
+  };
+}
+
+function emptyEvidenceBalance(): EvidenceBalance {
+  return {
+    rankedPercent: 100,
+    proPercent: 0,
+    rankedMagnitude: 0,
+    proMagnitude: 0,
   };
 }
 
@@ -394,6 +712,13 @@ export function scoreLaneMetaEntry(
     pickRateFloor: 0.005,
   },
 ): number {
+  if (
+    entry.dataQuality === "target-fallback" ||
+    entry.dataQuality === "pro-supported"
+  ) {
+    return 0.5;
+  }
+
   const adjustedWinRate = adjustLaneMetaWinRate(entry, options.shrinkK);
   const winScore = normalizeRange(adjustedWinRate, 0.47, 0.54);
   const tierScore = normalizeRange(6 - entry.tier, 1, 5);

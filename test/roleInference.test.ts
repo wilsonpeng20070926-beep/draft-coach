@@ -80,7 +80,9 @@ describe("role inference", () => {
 function enemy(cellId: number, champion: ChampionRef | null): DraftPlayer {
   return {
     cellId,
+    side: "enemy",
     champion,
+    pickState: champion ? "locked" : "empty",
     role: null,
     isLocalPlayer: false,
   };

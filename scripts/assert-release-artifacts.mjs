@@ -1,30 +1,32 @@
-import { readdir } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 
 const releaseDirectory = process.argv[2] ?? "release";
 const entries = await readdir(releaseDirectory);
+const packageJson = JSON.parse(await readFile("package.json", "utf8"));
+const version = packageJson.version;
 
-const expectations =
+const expectedArtifacts =
   process.platform === "win32"
-    ? [/\.exe$/i]
+    ? [`draft-coach-${version}-win-${process.arch}.exe`]
   : process.platform === "darwin"
-      ? [/\.zip$/i]
+      ? [`draft-coach-${version}-mac-${process.arch}.zip`]
       : [];
 
-if (expectations.length === 0) {
+if (expectedArtifacts.length === 0) {
   console.log(`No platform artifact expectations for ${process.platform}`);
   process.exit(0);
 }
 
-const missing = expectations.filter((pattern) => !entries.some((entry) => pattern.test(entry)));
+const missing = expectedArtifacts.filter((artifact) => !entries.includes(artifact));
 
 if (missing.length > 0) {
   console.error(`Release artifacts in ${join(process.cwd(), releaseDirectory)}:`);
   for (const entry of entries) {
     console.error(`- ${entry}`);
   }
-  console.error(`Missing expected artifact pattern(s): ${missing.map(String).join(", ")}`);
+  console.error(`Missing current artifact(s): ${missing.join(", ")}`);
   process.exit(1);
 }
 
-console.log(`Release artifacts verified in ${releaseDirectory}`);
+console.log(`Verified ${expectedArtifacts.join(", ")} in ${releaseDirectory}`);

@@ -47,5 +47,8 @@ jobs:
       - name: Public snapshot scan
         run: npm run security:scan
 
+      - name: Validate release policy status
+        run: npm run release:policy:report
+
       - name: Electron smoke
         run: xvfb-run -a npm run smoke:electron

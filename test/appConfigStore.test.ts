@@ -73,6 +73,7 @@ describe("AppConfigStore", () => {
       },
       rank: "diamond_plus",
       topN: 7,
+      proEvidenceEnabled: false,
     });
     const persisted = JSON.parse(await readFile(configPath, "utf8")) as typeof DEFAULT_APP_CONFIG;
 
@@ -82,6 +83,7 @@ describe("AppConfigStore", () => {
     });
     expect(config.rank).toBe("diamond_plus");
     expect(config.topN).toBe(7);
+    expect(config.proEvidenceEnabled).toBe(false);
     expect(persisted).toEqual(config);
   });
 
@@ -104,7 +106,7 @@ describe("AppConfigStore", () => {
 
     const config = await store.load();
 
-    expect(config.version).toBe(2);
+    expect(config.version).toBe(5);
     expect(config.weights).toEqual({
       ...DEFAULT_APP_CONFIG.weights,
       meta: 0.25,
@@ -113,6 +115,26 @@ describe("AppConfigStore", () => {
     });
     expect(config.region).toBe("kr");
     expect(config.rank).toBe("diamond_plus");
+    expect(config.favoriteTeams).toEqual([]);
+  });
+
+  it("has no favorite by default and migrates multiple sanitized favorites", async () => {
+    const { store, configPath } = await createStore();
+    await writeFile(
+      configPath,
+      JSON.stringify({
+        version: 2,
+        favoriteTeams: [" T1 ", "Bilibili Gaming", "T1", "", 42],
+      }),
+      "utf8",
+    );
+
+    const config = await store.load();
+
+    expect(DEFAULT_APP_CONFIG.favoriteTeams).toEqual([]);
+    expect(config.favoriteTeams).toEqual(["Bilibili Gaming", "T1"]);
+    expect(config.version).toBe(5);
+    expect(config.proEvidenceEnabled).toBe(true);
   });
 });
 

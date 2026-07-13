@@ -52,6 +52,7 @@ describe("candidate pool v2", () => {
           player(1, "jungle", nocturne, false),
         ],
       }),
+      target: target(),
       ctx: neutralContext(),
       options: createOptions(),
       metaSource: source,
@@ -100,7 +101,7 @@ describe("candidate pool v2", () => {
         }),
     );
 
-    const result = await engine.recommend(createDraft());
+    const result = await engine.recommend(createDraft(), target());
 
     expect(result.recommendations[0].champion.name).toBe("Brand");
     expect(result.recommendations.map((recommendation) => recommendation.champion.name)).toContain(
@@ -126,6 +127,7 @@ describe("candidate pool v2", () => {
         bans: [bannedAp],
         enemies: [player(5, "top", pickedTank, false)],
       }),
+      target: target(),
       ctx: {
         ...apNeedContext(1),
         enemyThreats: [{ kind: "dive", severity: 1 }],
@@ -185,8 +187,9 @@ function createDraft(overrides: Partial<DraftState> = {}): DraftState {
     allies: [localPlayer],
     enemies: [],
     bans: [],
+    pickActions: [],
+    activeAllyPickCellIds: [],
     localPlayer,
-    laneOpponent: null,
     ...overrides,
   };
 }
@@ -255,9 +258,21 @@ function player(
 ): DraftPlayer {
   return {
     cellId,
+    side: cellId >= 5 ? "enemy" : "ally",
     role,
     champion: championRef,
+    pickState: championRef ? "locked" : "empty",
     isLocalPlayer,
+  };
+}
+
+function target() {
+  return {
+    side: "ally" as const,
+    cellId: 0,
+    role: "middle" as const,
+    source: "automatic" as const,
+    purpose: "recommend" as const,
   };
 }
 

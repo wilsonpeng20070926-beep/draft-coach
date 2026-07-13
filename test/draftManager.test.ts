@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   inferDraftStateEnemyRoles,
+  resolveTargetLaneOpponent,
   toDraftState,
   type RawChampSelectSession,
 } from "../src/main/draft/draftManager";
@@ -18,8 +19,8 @@ describe("draft manager", () => {
     expect(draftState.localPlayer?.cellId).toBe(2);
     expect(draftState.localPlayer?.isLocalPlayer).toBe(true);
     expect(draftState.localPlayer?.champion?.name).toBe("Yasuo");
-    expect(draftState.laneOpponent?.cellId).toBe(7);
-    expect(draftState.laneOpponent?.champion?.name).toBe("Ahri");
+    expect(resolveTargetLaneOpponent(draftState, allyTarget(2, "middle"))?.cellId).toBe(7);
+    expect(resolveTargetLaneOpponent(draftState, allyTarget(2, "middle"))?.champion?.name).toBe("Ahri");
     expect(draftState.bans.map((champion) => champion.name)).toEqual(["Darius", "Jax"]);
   });
 
@@ -32,7 +33,7 @@ describe("draft manager", () => {
     const draftState = toDraftState(session, "ChampSelect", catalog);
 
     expect(draftState.localPlayer?.role).toBeNull();
-    expect(draftState.laneOpponent).toBeNull();
+    expect(resolveTargetLaneOpponent(draftState, allyTarget(2, "middle"))).toBeNull();
   });
 
   it("returns null lane opponent when enemy role matches are ambiguous", () => {
@@ -44,7 +45,7 @@ describe("draft manager", () => {
 
     expect(draftState.localPlayer?.role).toBe("middle");
     expect(draftState.enemies.filter((enemy) => enemy.role === "middle")).toHaveLength(2);
-    expect(draftState.laneOpponent).toBeNull();
+    expect(resolveTargetLaneOpponent(draftState, allyTarget(2, "middle"))).toBeNull();
   });
 
   it("maps non-champ-select phases into DraftState phases", () => {
@@ -72,9 +73,78 @@ describe("draft manager", () => {
       top: champion.name === "Wukong" ? 1 : 0.1,
     }));
 
-    expect(inferred.laneOpponent?.champion?.name).toBe("Ahri");
-    expect(inferred.laneOpponent?.roleSource).toBe("inferred");
-    expect(inferred.laneOpponent?.roleConfidence).toBeGreaterThan(0.8);
+    const opponent = resolveTargetLaneOpponent(inferred, allyTarget(2, "middle"));
+
+    expect(opponent?.champion?.name).toBe("Ahri");
+    expect(opponent?.roleSource).toBe("inferred");
+    expect(opponent?.roleConfidence).toBeGreaterThan(0.8);
+  });
+
+  it("infers the only remaining role for an unpicked enemy cell", async () => {
+    const catalog = createFixtureCatalog();
+    const session = createSession();
+    const enemies = session.theirTeam as Array<Record<string, unknown>>;
+    enemies[4] = { ...enemies[4], assignedPosition: "" };
+    const draft = toDraftState(session, "ChampSelect", catalog);
+    const inferred = await inferDraftStateEnemyRoles(
+      draft,
+      async () => createEmptyRoleFit(),
+    );
+
+    expect(inferred.enemies[4]).toMatchObject({
+      champion: null,
+      role: "utility",
+      roleSource: "inferred",
+      roleConfidence: 0.55,
+    });
+  });
+
+  it("preserves pick action ownership and distinguishes hover from lock", () => {
+    const catalog = createFixtureCatalog();
+    const session = createSession();
+    session.actions = [
+      [
+        {
+          id: 91,
+          actorCellId: 2,
+          championId: 103,
+          type: "pick",
+          completed: false,
+          isInProgress: true,
+        },
+        {
+          id: 92,
+          actorCellId: 3,
+          championId: 222,
+          type: "pick",
+          completed: true,
+          isInProgress: false,
+        },
+      ],
+    ];
+    const draft = toDraftState(session, "ChampSelect", catalog);
+
+    expect(draft.pickActions).toEqual([
+      expect.objectContaining({
+        id: 91,
+        actorCellId: 2,
+        championId: 103,
+        completed: false,
+        isInProgress: true,
+        groupIndex: 0,
+        order: 0,
+      }),
+      expect.objectContaining({ id: 92, actorCellId: 3, completed: true }),
+    ]);
+    expect(draft.allies.find((ally) => ally.cellId === 2)).toMatchObject({
+      pickState: "hovering",
+      champion: expect.objectContaining({ name: "Ahri" }),
+    });
+    expect(draft.allies.find((ally) => ally.cellId === 3)).toMatchObject({
+      pickState: "locked",
+      champion: expect.objectContaining({ name: "Jinx" }),
+    });
+    expect(draft.activeAllyPickCellIds).toEqual([2]);
   });
 });
 
@@ -112,10 +182,26 @@ function createSession(
         { championId: 24, type: "ban", completed: true },
       ],
       [
-        { championId: 875, type: "pick", completed: true },
+        { id: 10, actorCellId: 0, championId: 266, type: "pick", completed: true },
+        { id: 11, actorCellId: 1, championId: 875, type: "pick", completed: true },
+        { id: 12, actorCellId: 2, championId: 157, type: "pick", completed: true },
+        { id: 13, actorCellId: 3, championId: 222, type: "pick", completed: true },
+        { id: 14, actorCellId: 4, championId: 412, type: "pick", completed: true },
+        { id: 15, actorCellId: 5, championId: 62, type: "pick", completed: true },
+        { id: 16, actorCellId: 7, championId: 103, type: "pick", completed: true },
         { championId: 0, type: "ban", completed: true },
         { championId: 412, type: "ban", completed: false },
       ],
     ],
+  };
+}
+
+function allyTarget(cellId: number, role: "middle") {
+  return {
+    side: "ally" as const,
+    cellId,
+    role,
+    source: "automatic" as const,
+    purpose: "recommend" as const,
   };
 }

@@ -57,9 +57,9 @@ describe("shared champion analysis cache", () => {
     });
 
     await Promise.all([
-      synergyModule.contribute(orianna, draft, contextWithSignals()),
-      compFitModule.contribute(orianna, draft, contextWithSignals()),
-      teamCounterModule.contribute(orianna, draft, contextWithSignals()),
+      synergyModule.contribute(orianna, draft, target(), contextWithSignals()),
+      compFitModule.contribute(orianna, draft, target(), contextWithSignals()),
+      teamCounterModule.contribute(orianna, draft, target(), contextWithSignals()),
     ]);
 
     expect(rawSource.analysisCalls).toBe(1);
@@ -108,8 +108,9 @@ function createDraft(overrides: Partial<DraftState> = {}): DraftState {
     allies: [localPlayer],
     enemies: [],
     bans: [],
+    pickActions: [],
+    activeAllyPickCellIds: [],
     localPlayer,
-    laneOpponent: null,
     ...overrides,
   };
 }
@@ -122,9 +123,21 @@ function player(
 ): DraftPlayer {
   return {
     cellId,
+    side: "ally",
     role,
     champion,
+    pickState: champion ? "locked" : "empty",
     isLocalPlayer,
+  };
+}
+
+function target() {
+  return {
+    side: "ally" as const,
+    cellId: 0,
+    role: "middle" as const,
+    source: "automatic" as const,
+    purpose: "recommend" as const,
   };
 }
 

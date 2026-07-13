@@ -3,9 +3,20 @@ import { CompositionPanel } from "./components/CompositionPanel";
 import DraftBoard from "./components/DraftBoard";
 import { RecommendationList } from "./components/RecommendationList";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { SimulationPanel } from "./components/SimulationPanel";
+import { ProDataStatusPanel } from "./components/ProDataStatusPanel";
+import { ModeTabs, type DraftMode } from "./components/ModeTabs";
 import type { LcuStatus } from "../main/ipc";
 import { DEFAULT_APP_CONFIG, type AppConfig, type AppConfigPatch } from "../shared/config";
-import type { DraftState, RecommendationUpdate } from "../shared/types";
+import type {
+  AnticipatedThreat,
+  ChampionRef,
+  DraftSimulationState,
+  DraftState,
+  RecommendationUpdate,
+  SimulationCommand,
+} from "../shared/types";
+import type { ProDataStatus } from "../shared/proData";
 
 const initialStatus: LcuStatus = {
   connection: "waiting",
@@ -14,6 +25,17 @@ const initialStatus: LcuStatus = {
 
 const initialRecommendationUpdate: RecommendationUpdate = {
   recommendations: [],
+  categories: [],
+  evidenceBalance: {
+    rankedPercent: 100,
+    proPercent: 0,
+    rankedMagnitude: 0,
+    proMagnitude: 0,
+  },
+  targets: [],
+  target: null,
+  evaluation: null,
+  threats: [],
   loading: false,
   limitedDataNote: null,
   teamContext: null,
@@ -29,21 +51,40 @@ function App(): JSX.Element {
   const [recommendationUpdate, setRecommendationUpdate] = useState<RecommendationUpdate>(
     initialRecommendationUpdate,
   );
+  const [mode, setMode] = useState<DraftMode>("live");
+  const [champions, setChampions] = useState<ChampionRef[]>([]);
+  const [simulationState, setSimulationState] = useState<DraftSimulationState | null>(null);
+  const [simulationUpdate, setSimulationUpdate] = useState<RecommendationUpdate>(
+    initialRecommendationUpdate,
+  );
+  const [proDataStatus, setProDataStatus] = useState<ProDataStatus | null>(null);
 
   useEffect(() => {
     void window.api.ping().then(setPong).catch(() => setPong("IPC unavailable"));
     void window.api.getConfig().then(setConfig).catch(() => setConfig(DEFAULT_APP_CONFIG));
+    void window.api.getChampions().then(setChampions).catch(() => setChampions([]));
+    void window.api.getSimulationState().then(setSimulationState).catch(() => undefined);
+    void window.api.getProDataStatus().then(setProDataStatus).catch(() => undefined);
 
     const removeStatusListener = window.api.onLcuStatus(setStatus);
     const removeDraftStateListener = window.api.onDraftState(setDraftState);
     const removeRecommendationListener = window.api.onRecommendations(setRecommendationUpdate);
     const removeConfigListener = window.api.onConfigChanged(setConfig);
+    const removeChampionListener = window.api.onChampions(setChampions);
+    const removeSimulationStateListener = window.api.onSimulationState(setSimulationState);
+    const removeSimulationRecommendationListener =
+      window.api.onSimulationRecommendations(setSimulationUpdate);
+    const removeProDataStatusListener = window.api.onProDataStatus(setProDataStatus);
 
     return () => {
       removeStatusListener();
       removeDraftStateListener();
       removeRecommendationListener();
       removeConfigListener();
+      removeChampionListener();
+      removeSimulationStateListener();
+      removeSimulationRecommendationListener();
+      removeProDataStatusListener();
     };
   }, []);
 
@@ -57,6 +98,21 @@ function App(): JSX.Element {
       .setConfig(patch)
       .then(setConfig)
       .finally(() => setConfigSaving(false));
+  };
+  const applySimulationCommand = (command: SimulationCommand): void => {
+    void window.api.applySimulationCommand(command).then(setSimulationState);
+  };
+  const pinSimulationThreat = (threat: AnticipatedThreat): void => {
+    applySimulationCommand({
+      type: "pinThreat",
+      championId: threat.champion.id,
+      role: threat.role,
+      source: "simulation",
+      confidence: threat.confidence,
+    });
+  };
+  const refreshProData = (): void => {
+    void window.api.refreshProData().then(setProDataStatus);
   };
 
   return (
@@ -91,21 +147,66 @@ function App(): JSX.Element {
         </div>
       </section>
 
-      {isChampSelect && draftState ? (
+      <ModeTabs mode={mode} onChange={setMode} />
+
+      <ProDataStatusPanel status={proDataStatus} onRefresh={refreshProData} />
+
+      <div id="draft-mode-panel" role="tabpanel">
+      {mode === "simulation" && simulationState ? (
         <>
-          <RecommendationList update={recommendationUpdate} />
+          <SimulationPanel
+            state={simulationState}
+            champions={champions}
+            favoriteTeams={config.favoriteTeams}
+            onCommand={applySimulationCommand}
+          />
+          <RecommendationList
+            update={simulationUpdate}
+            onSelectTarget={() => undefined}
+            onPinThreat={pinSimulationThreat}
+            onRemoveThreat={(threat) =>
+              applySimulationCommand({
+                type: "removeThreat",
+                championId: threat.champion.id,
+              })
+            }
+          />
+          <CompositionPanel context={simulationUpdate.teamContext} />
+        </>
+      ) : mode === "live" && isChampSelect && draftState ? (
+        <>
+          <RecommendationList
+            update={recommendationUpdate}
+            onSelectTarget={(cellId) => void window.api.setDraftTarget(cellId)}
+            onPinThreat={(threat) =>
+              void window.api.pinLiveThreat(threat.champion.id, threat.role)
+            }
+            onRemoveThreat={(threat) =>
+              void window.api.removeLiveThreat(threat.champion.id)
+            }
+          />
           <CompositionPanel context={recommendationUpdate.teamContext} />
-          <DraftBoard draftState={draftState} />
+          <DraftBoard
+            draftState={draftState}
+            target={recommendationUpdate.target}
+            onSelectAlly={(cellId) => void window.api.setDraftTarget(cellId)}
+            onSelectEnemy={(cellId, role) =>
+              void window.api.setDraftThreatTarget(cellId, role)
+            }
+          />
         </>
       ) : (
         <section className="idle-view">
           <p>
-            {isConnected
+            {mode === "simulation"
+              ? "Loading the offline simulator."
+              : isConnected
               ? "Open a practice tool or custom draft to see the live board."
               : "Waiting for the League client. Reconnect happens automatically."}
           </p>
         </section>
       )}
+      </div>
 
       {settingsOpen ? (
         <SettingsPanel
@@ -113,6 +214,8 @@ function App(): JSX.Element {
           saving={configSaving}
           onChange={updateConfig}
           onClose={() => setSettingsOpen(false)}
+          proDataStatus={proDataStatus}
+          onRefreshProData={refreshProData}
         />
       ) : null}
     </main>

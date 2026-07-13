@@ -47,8 +47,9 @@ function createDraft(overrides: Partial<DraftState> = {}): DraftState {
     allies: [localPlayer],
     enemies: [],
     bans: [],
+    pickActions: [],
+    activeAllyPickCellIds: [],
     localPlayer,
-    laneOpponent: null,
     ...overrides,
   };
 }
@@ -61,8 +62,10 @@ function player(
 ): DraftPlayer {
   return {
     cellId,
+    side: "ally",
     role,
     champion,
+    pickState: champion ? "locked" : "empty",
     isLocalPlayer,
   };
 }

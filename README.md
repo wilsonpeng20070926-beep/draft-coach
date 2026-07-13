@@ -8,9 +8,9 @@ The current app includes meta anchoring, lane-counter signals, team-counter warn
 
 ## Status
 
-- Current release: `v0.1.1` public beta.
+- Current engineering version: `v0.1.1`; public release is blocked pending the recorded policy approvals.
 - Supported app targets: Windows and macOS desktop builds.
-- Developer runtime: Node 20 LTS.
+- Developer runtime: Node 24 (see `.nvmrc`).
 - License: MIT.
 - Riot product registration: required before broad public distribution.
 - Signing/notarization: recommended for public binaries; unsigned beta artifacts should be clearly labeled.
@@ -25,10 +25,12 @@ The current app includes meta anchoring, lane-counter signals, team-counter warn
 - Composition readout for allied AD/AP balance, team needs, and enemy threat pressure.
 - Settings panel with presets and advanced controls for scoring weights and confidence thresholds.
 - Network-free reranking when only factor weights change.
+- Live and offline Simulator modes with explicit targets and hypothetical threat planning.
+- Optional professional-draft evidence with freshness, ranked-only fallback, multiple favorite teams, and expandable provenance.
 
 ## Download
 
-The first public release should be published from a sanitized repository as a GitHub Release.
+The first public release should be published from a sanitized repository as a GitHub Release only after `npm run release:policy:assert` passes.
 
 Expected release artifacts:
 
@@ -41,7 +43,7 @@ Until Developer ID signed and notarized builds are available, Windows SmartScree
 
 ## Quick Start For Users
 
-1. Download the installer or archive for your operating system from the GitHub Release.
+1. After a release is approved, download the installer or archive for your operating system from the GitHub Release.
 2. Install or unzip Draft Coach.
 3. Open the League client and log in.
 4. Launch Draft Coach.
@@ -66,9 +68,11 @@ The Electron window is intentionally compact and always on top so it can sit bes
 npm run typecheck
 npm test
 npm run build
+npm run evaluation:test
 npm audit --omit=dev
 npm audit
 npm run security:scan
+npm run release:policy:report
 npm run smoke:electron
 ```
 
@@ -102,6 +106,9 @@ Explanations are intentionally hedged when confidence is limited. Role inference
 - `Pick floor`: minimum pick-rate threshold used to avoid very thin samples.
 - `Shrink K`: sample-size shrinkage used when confidence is low.
 - `Chip confidence`: minimum confidence needed for visible reason chips.
+- `Professional evidence`: enable/disable the validated pro snapshot contribution.
+- `Pro influence`: tune its bounded effect.
+- `Favorite teams`: optional, comma-separated strategy context with no default favorite.
 
 ## Troubleshooting
 
@@ -119,8 +126,12 @@ Common cases:
 Draft Coach reads local League client state and fetches public game-data context. See:
 
 - [Data Sources](docs/DATA_SOURCES.md)
+- [Scoring](docs/SCORING.md)
 - [Privacy](docs/PRIVACY.md)
 - [User Guide](docs/USER_GUIDE.md)
+- [Evaluation](docs/EVALUATION.md)
+- [Calibration Report](docs/CALIBRATION_REPORT.md)
+- [Release Policy Status](docs/RELEASE_POLICY_STATUS.json)
 
 ## Contributing
 
@@ -128,4 +139,4 @@ Contributions are welcome after the public repository is opened. Please read [CO
 
 ## Release Checklist
 
-Before broad public distribution, complete the [Release Checklist](docs/RELEASE_CHECKLIST.md). At minimum, confirm secret scanning, Riot registration, dependency audit status, Windows/macOS artifact smoke tests, and release checksums.
+Before broad public distribution, complete the [Release Checklist](docs/RELEASE_CHECKLIST.md). At minimum, resolve every machine-readable policy blocker, confirm secret scanning, run evaluation and dependency gates, smoke-test Windows/macOS artifacts, and publish release checksums.

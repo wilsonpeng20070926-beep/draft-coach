@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FactorBreakdown, Recommendation } from "../../shared/types";
+import type { ProEvidenceRecord } from "../../shared/proData";
 import {
   formatBreakdownStrength,
   formatContributionSummary,
@@ -32,6 +33,7 @@ export function RecommendationCard({
   const visibleReasons = expanded ? reasons : reasons.slice(0, 3);
   const hiddenReasonCount = reasons.length - visibleReasons.length;
   const breakdown = collectBreakdown(recommendation);
+  const proEvidence = collectProEvidence(recommendation);
 
   return (
     <li className="recommendation-card" data-expanded={expanded}>
@@ -61,6 +63,12 @@ export function RecommendationCard({
         <div className="score-track" aria-label={`score ${percent}`}>
           <div className="score-fill" style={{ width: `${percent}%` }} />
         </div>
+        {recommendation.risk ? (
+          <div className="risk-summary" data-label={recommendation.risk.label}>
+            <b>{recommendation.risk.label}</b>
+            <span>{recommendation.risk.reasons[0]}</span>
+          </div>
+        ) : null}
         {reasons.length > 0 ? (
           <div className="reason-list">
             {visibleReasons.map((reason, index) => {
@@ -107,11 +115,57 @@ export function RecommendationCard({
                 ))}
               </div>
             ) : null}
+            {proEvidence.length > 0 ? (
+              <div className="pro-evidence-list" aria-label="professional evidence details">
+                {proEvidence.map((evidence) => (
+                  <div key={`${evidence.kind}-${evidence.text}`}>
+                    <b>{evidence.text}</b>
+                    <span>{formatExactProEvidence(evidence)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
     </li>
   );
+}
+
+function collectProEvidence(recommendation: Recommendation): ProEvidenceRecord[] {
+  return [...new Map(
+    recommendation.contributions
+      .flatMap((contribution) => contribution.proEvidence ?? [])
+      .map((evidence) => [`${evidence.kind}|${evidence.text}`, evidence]),
+  ).values()]
+    .sort(
+      (left, right) =>
+        Number(right.material) - Number(left.material) ||
+        right.confidence - left.confidence ||
+        left.kind.localeCompare(right.kind),
+    )
+    .slice(0, 5);
+}
+
+export function formatExactProEvidence(evidence: ProEvidenceRecord): string {
+  const coverage = [
+    evidence.patches.length > 0 ? `patches ${evidence.patches.join(", ")}` : null,
+    evidence.competitions.length > 0
+      ? evidence.competitions.join(", ")
+      : null,
+    evidence.teams.length > 0 ? `teams ${evidence.teams.join(", ")}` : null,
+  ].filter((item): item is string => Boolean(item));
+
+  return [
+    `effective n ${formatNumber(evidence.effectiveSample)}`,
+    `${Math.round(evidence.confidence * 100)}% confidence`,
+    `${evidence.ageDays}d old`,
+    ...coverage,
+  ].join(" · ");
+}
+
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 function collectBreakdown(recommendation: Recommendation): FactorBreakdown[] {
