@@ -32,7 +32,7 @@ OP.GG policy references:
 - https://help.op.gg/hc/en-us/articles/31091405109401-Can-I-use-OP-GG-data
 - https://op.gg/lol/policies/agreement
 
-OP.GG's help guidance, updated December 31, 2025, says crawling is not generally prohibited but requires source citation and care not to impair the service; it warns that commercial use without citation or excessive requests may be restricted. Before broad public or commercial distribution, maintainers must confirm the planned MCP-backed usage, request volume, caching, citation, and redistribution posture.
+OP.GG's help guidance, updated December 31, 2025, says crawling is not generally prohibited but requires source citation and care not to impair the service; it warns that commercial use without citation or excessive requests may be restricted. OP.GG's general Terms of Use, effective January 10, 2024, separately prohibit scraping or data mining through the Sites or Services and restrict commercial reuse without express written consent. Because those statements are not equivalent, the project treats OP.GG-derived access as release-blocking until OP.GG provides written clarification or permission covering the planned MCP-backed usage, request volume, caching, citation, and redistribution posture.
 
 ## Professional Draft Snapshot
 

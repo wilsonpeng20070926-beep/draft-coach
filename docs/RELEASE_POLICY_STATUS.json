@@ -25,8 +25,8 @@
     {
       "id": "opgg-public-use-review",
       "status": "blocked",
-      "summary": "OP.GG asks reusers to cite the source and avoid excessive requests, and warns that commercial use without citation may be restricted.",
-      "ownerAction": "Obtain and record a public-distribution review for the MCP-backed OP.GG request volume, caching, citation, and redistribution posture.",
+      "summary": "OP.GG's help guidance conditionally permits crawling with citation and responsible request volume, while its general Terms prohibit scraping or data mining and restrict commercial reuse without express written consent; no project-specific written authorization is recorded.",
+      "ownerAction": "Obtain and record written OP.GG clarification or permission for the MCP-backed request volume, caching, citation, redistribution, and any public or commercial distribution posture.",
       "sourceUrls": [
         "https://help.op.gg/hc/en-us/articles/31091405109401-Can-I-use-OP-GG-data",
         "https://op.gg/lol/policies/agreement"

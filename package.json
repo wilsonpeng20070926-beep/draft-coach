@@ -1,6 +1,6 @@
 {
   "name": "draft-coach",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "League of Legends champ-select draft assistant.",
   "author": "Draft Coach maintainers",
   "license": "MIT",
@@ -57,17 +57,17 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/node": "^20.12.12",
-    "@types/react": "^18.3.23",
+    "@types/node": "^20.19.43",
+    "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^5.2.0",
     "electron": "^43.1.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
-    "tsx": "^4.22.3",
+    "tsx": "^4.23.1",
     "typescript": "^5.4.5",
     "vite": "^7.3.6",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "build": {
     "appId": "io.github.draftcoach.app",

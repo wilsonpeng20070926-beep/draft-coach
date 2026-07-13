@@ -8,7 +8,7 @@ The current app includes meta anchoring, lane-counter signals, team-counter warn
 
 ## Status
 
-- Current engineering version: `v0.1.1`; public release is blocked pending the recorded policy approvals.
+- Current engineering version: `v0.2.0` (unreleased); public release is blocked pending the recorded policy approvals.
 - Supported app targets: Windows and macOS desktop builds.
 - Developer runtime: Node 24 (see `.nvmrc`).
 - License: MIT.
@@ -30,16 +30,16 @@ The current app includes meta anchoring, lane-counter signals, team-counter warn
 
 ## Download
 
-The first public release should be published from a sanitized repository as a GitHub Release only after `npm run release:policy:assert` passes.
+The next public release should be published from a sanitized repository as a GitHub Release only after `npm run release:policy:assert` passes. The existing `v0.1.1` prerelease predates Draft Intelligence v2 and should be treated as a historical beta, not the current build.
 
 Expected release artifacts:
 
-- `draft-coach-0.1.1-win-x64.exe`
-- `draft-coach-0.1.1-mac-arm64.zip`
+- `draft-coach-0.2.0-win-x64.exe`
+- `draft-coach-0.2.0-mac-arm64.zip`
 - `SHA256SUMS-draft-coach-windows.txt`
 - `SHA256SUMS-draft-coach-macos.txt`
 
-Until Developer ID signed and notarized builds are available, Windows SmartScreen and macOS Gatekeeper may warn that the app is from an unidentified developer. A signed/notarized macOS DMG is planned for a later release path; v0.1.1 uses an ad-hoc signed ZIP archive.
+Until Developer ID signed and notarized builds are available, Windows SmartScreen and macOS Gatekeeper may warn that the app is from an unidentified developer. A signed/notarized macOS DMG is planned for a later release path; current macOS ZIP packaging uses ad-hoc signing.
 
 ## Quick Start For Users
 
