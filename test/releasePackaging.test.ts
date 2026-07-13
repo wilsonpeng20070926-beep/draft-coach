@@ -61,6 +61,8 @@ describe("release packaging", () => {
     );
 
     expect(workflow).toContain("runs-on: windows-latest");
+    expect(workflow).toContain("pull_request:");
+    expect(workflow).toContain("push:");
     expect(workflow).toContain("permissions:\n  contents: read");
     expect(workflow).toContain("npm run dist:dir");
     expect(workflow).toContain("DRAFT_COACH_SMOKE");
