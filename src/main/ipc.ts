@@ -17,6 +17,7 @@ export const ipcChannels = {
   lcuStatus: "lcu:status",
   draftState: "draft:state",
   draftTargetSet: "draft:target:set",
+  draftRoleSet: "draft:role:set",
   draftThreatTargetSet: "draft:threat-target:set",
   draftThreatPin: "draft:threat:pin",
   draftThreatRemove: "draft:threat:remove",
@@ -49,6 +50,7 @@ export interface DraftCoachApi {
   onLcuStatus: (callback: (status: LcuStatus) => void) => () => void;
   onDraftState: (callback: (draftState: DraftState) => void) => () => void;
   setDraftTarget: (cellId: number) => Promise<void>;
+  setDraftRole: (cellId: number, role: Role | null) => Promise<void>;
   setDraftThreatTarget: (cellId: number, role: Role) => Promise<void>;
   pinLiveThreat: (championId: number, role: Role | null) => Promise<void>;
   removeLiveThreat: (championId: number) => Promise<void>;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyDraftRoleOverrides,
   inferDraftStateEnemyRoles,
   resolveTargetLaneOpponent,
   toDraftState,
@@ -34,6 +35,25 @@ describe("draft manager", () => {
 
     expect(draftState.localPlayer?.role).toBeNull();
     expect(resolveTargetLaneOpponent(draftState, allyTarget(2, "middle"))).toBeNull();
+  });
+
+  it("applies a live manual role when custom champ select has no assignment", () => {
+    const catalog = createFixtureCatalog();
+    const draftState = toDraftState(createSession({ allyRole: "" }), "ChampSelect", catalog);
+    const overridden = applyDraftRoleOverrides(
+      draftState,
+      new Map([[2, "middle"]]),
+    );
+
+    expect(overridden.localPlayer).toMatchObject({
+      cellId: 2,
+      role: "middle",
+      roleSource: "manual",
+      roleConfidence: 1,
+    });
+    expect(overridden.allies.find((ally) => ally.cellId === 2)).toEqual(
+      overridden.localPlayer,
+    );
   });
 
   it("returns null lane opponent when enemy role matches are ambiguous", () => {

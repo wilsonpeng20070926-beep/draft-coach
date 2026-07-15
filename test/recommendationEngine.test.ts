@@ -102,6 +102,25 @@ describe("RecommendationEngine", () => {
     ]);
   });
 
+  it("keeps recommendations available and labels catalog fallback data", async () => {
+    const meta = new FakeMetaDataSource();
+    meta.laneMeta = [
+      { ...laneEntry(ahri, 0.5, 5), dataQuality: "catalog-fallback" },
+      { ...laneEntry(wukong, 0.5, 5), dataQuality: "catalog-fallback" },
+    ];
+    const engine = createEngine(meta, [], { topN: 2, candidateCap: 10 });
+
+    const result = await recommend(engine, createDraft());
+
+    expect(result.recommendations).toHaveLength(2);
+    expect(result.limitedDataNote).toBe(
+      "Live OP.GG data is unavailable; showing a tag-based offline fallback.",
+    );
+    expect(result.recommendations[0].contributions[0].reasons).toEqual([
+      "Offline role fit: catalog tag prior",
+    ]);
+  });
+
   it("shrinks thin-sample win rate and down-weights picks below the floor", async () => {
     const thinHighWin = laneEntry(jax, 0.6, 1, 0.001, 50);
     const sturdyMeta = laneEntry(wukong, 0.52, 2, 0.07, 20000);

@@ -8,14 +8,15 @@ Draft Coach is designed to stay beside the League client during champion select.
 2. Start Draft Coach.
 3. Enter champ select.
 4. Wait for Draft Coach to show `In champ select`.
-5. Review recommendations once your role is known.
-6. Use the category chips to compare overall, lane, synergy, composition, pro-inspired, and risk views.
-7. Expand `Why` or `Show evidence` to inspect exact score and professional evidence.
-8. Open settings to tune ranked factors, professional influence, favorite teams, and data refresh.
+5. If League does not assign a role (common in custom and practice drafts), choose it from the allied-slot `Role` menu.
+6. Review recommendations once your role is known.
+7. Use the category chips to compare overall, lane, synergy, composition, pro-inspired, and risk views.
+8. Expand `Why` or `Show evidence` to inspect exact score and professional evidence.
+9. Open settings to tune ranked factors, professional influence, favorite teams, and data refresh.
 
 ## Live And Simulator Modes
 
-`Live` follows League champ select. Simultaneous allied pick turns appear as separate target tabs, with the local player first. Clicking an allied slot temporarily overrides automatic focus until the active turn changes. Clicking an enemy slot opens the hypothetical `Prepare to counter` workflow.
+`Live` follows League champ select. Simultaneous allied pick turns appear as separate target tabs, with the local player first. Clicking an allied slot temporarily overrides automatic focus until the active turn changes. Each allied slot also has a role menu so custom drafts remain usable when League provides no role. Clicking an enemy slot opens the hypothetical `Prepare to counter` workflow.
 
 `Simulator` is offline planning state. It supports roles, hovers, locks, picks, bans, target selection, anticipated threats, undo, and reset without changing the live draft. Favorite teams add a visible strategy context; no favorite is selected by default.
 
@@ -73,7 +74,7 @@ The lightweight professional-data details surface shows source and age. Stale, u
 
 ## Limitations
 
-- Recommendations depend on external data availability and response shape.
+- Live ranked evidence uses a persistent last-known-good cache. If OP.GG and the cache are both unavailable, Draft Coach keeps the board usable with a visibly labeled, neutral tag-based fallback.
 - Historical professional continuation is evidence, not proof of a uniquely correct pick.
 - Professional evidence is confidence-shrunk and cannot remove uncertainty caused by team strength, limited samples, or draft context.
 - Role inference can be wrong when League or data-source role signals are thin.

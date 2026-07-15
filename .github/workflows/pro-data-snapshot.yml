@@ -38,6 +38,8 @@ jobs:
       - name: Fetch normalized Leaguepedia drafts
         env:
           MANUAL_PATCHES: ${{ inputs.patches }}
+          LEAGUEPEDIA_BOT_USERNAME: ${{ secrets.LEAGUEPEDIA_BOT_USERNAME }}
+          LEAGUEPEDIA_BOT_PASSWORD: ${{ secrets.LEAGUEPEDIA_BOT_PASSWORD }}
         run: |
           PATCH_ARGS=()
           if [ -n "$MANUAL_PATCHES" ]; then

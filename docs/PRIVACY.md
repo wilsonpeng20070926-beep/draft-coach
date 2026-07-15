@@ -27,6 +27,8 @@ Draft Coach fetches:
 
 Professional snapshot refreshes do not include local League client state, account credentials, local picks, settings, or the LCU token. Direct Leaguepedia Cargo fallback is disabled by default and runs only when explicitly configured by the operator.
 
+The build-time Leaguepedia fetcher can authenticate with an email-verified bot identity supplied through the `LEAGUEPEDIA_BOT_USERNAME` and `LEAGUEPEDIA_BOT_PASSWORD` environment variables. Those credentials are used only for MediaWiki login and authenticated Cargo requests. They are not written to the repository, snapshot, build artifact, logs, application cache, or desktop package.
+
 Draft Coach should not send the local LCU token to third-party services. The token is used only to communicate with the local League client.
 
 ## What The App Does Not Do

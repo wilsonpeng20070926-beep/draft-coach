@@ -4,10 +4,17 @@ import { createChampionAttributeProvider } from "./catalog/championAttributes";
 import { DataDragonChampionCatalog, type ChampionCatalog } from "./catalog/championCatalog";
 import { createAppConfigStore, type AppConfigStore } from "./config/appConfigStore";
 import { CachedMetaDataSource } from "./data/cache";
+import {
+  CatalogFallbackMetaDataSource,
+  ResilientMetaDataSource,
+} from "./data/catalogFallbackSource";
 import type { MetaDataSource } from "./data/metaDataSource";
 import { OpggMcpSource } from "./data/opggMcpSource";
 import { buildProDataSnapshot } from "./data/pro/aggregate";
-import { LeaguepediaCargoAdapter } from "./data/pro/leaguepediaCargo";
+import {
+  LeaguepediaCargoAdapter,
+  leaguepediaBotAuthenticationFromEnvironment,
+} from "./data/pro/leaguepediaCargo";
 import { deriveProPatchWindow } from "./data/pro/patchWindow";
 import {
   SnapshotProAnalyticsProvider,
@@ -18,7 +25,12 @@ import {
   StaticSnapshotProDataSource,
   type ProDataSource,
 } from "./data/pro/proDataSource";
-import { createEmptyDraftState, inferDraftStateEnemyRoles, toDraftState } from "./draft/draftManager";
+import {
+  applyDraftRoleOverrides,
+  createEmptyDraftState,
+  inferDraftStateEnemyRoles,
+  toDraftState,
+} from "./draft/draftManager";
 import {
   applySimulationCommand,
   createDraftSimulationState,
@@ -97,6 +109,7 @@ let simulationState: DraftSimulationState = createDraftSimulationState();
 let latestSimulationForecasts: AnticipatedThreat[] = [];
 let livePinnedThreats: AnticipatedThreat[] = [];
 let latestLiveForecasts: AnticipatedThreat[] = [];
+const liveRoleOverrides = new Map<number, Role>();
 let liveThreatForecastRunId = 0;
 let simulationRunId = 0;
 
@@ -233,7 +246,10 @@ async function pushDraftState(): Promise<void> {
     return;
   }
 
-  const baseDraftState = toDraftState(latestRawChampSelectSession, latestStatus.phase, catalog);
+  const baseDraftState = applyDraftRoleOverrides(
+    toDraftState(latestRawChampSelectSession, latestStatus.phase, catalog),
+    liveRoleOverrides,
+  );
   const draftState = await maybeInferEnemyRoles(baseDraftState);
 
   if (runId !== draftStateRunId) {
@@ -253,11 +269,19 @@ async function initializeCatalog(): Promise<ChampionCatalog> {
 
 function initializeRecommendationRunner(championCatalog: ChampionCatalog): void {
   opggSource = new OpggMcpSource(championCatalog);
+  void opggSource.warmUp().catch((error: unknown) => {
+    console.warn("[OP.GG] warm-up failed", toError(error).message);
+  });
   const cachedSource = new CachedMetaDataSource(opggSource, {
     ttlMs: INTERNAL_DATA_CONFIG.opggCacheTtlMs,
     patchVersion: championCatalog.version(),
+    cacheFile: join(app.getPath("userData"), "ranked-data-cache.json"),
   });
-  metaSource = cachedSource;
+  const rankedSource = new ResilientMetaDataSource(
+    cachedSource,
+    new CatalogFallbackMetaDataSource(championCatalog),
+  );
+  metaSource = rankedSource;
   const attributeProvider = createChampionAttributeProvider(championCatalog.version());
   proAnalyticsProvider = new SnapshotProAnalyticsProvider(
     () => proDataSource?.getSnapshot() ?? null,
@@ -277,38 +301,38 @@ function initializeRecommendationRunner(championCatalog: ChampionCatalog): void 
     () => currentConfig.favoriteTeams,
   );
   const counterModule = new CounterModule(
-    cachedSource,
+    rankedSource,
     () => currentConfig.region,
     () => currentConfig.rank,
     () => currentConfig.minChipConfidence,
   );
   const synergyModule = new SynergyModule(
-    cachedSource,
+    rankedSource,
     () => currentConfig.region,
     () => currentConfig.rank,
     () => currentConfig.minChipConfidence,
   );
   const teamCounterModule = new TeamCounterModule(
-    cachedSource,
+    rankedSource,
     attributeProvider,
     () => currentConfig.region,
     () => currentConfig.rank,
     () => currentConfig.minChipConfidence,
   );
   const compFitModule = new CompFitModule(
-    cachedSource,
+    rankedSource,
     attributeProvider,
     () => currentConfig.region,
     () => currentConfig.rank,
   );
   const engine = new RecommendationEngine(
-    cachedSource,
+    rankedSource,
     [counterModule, teamCounterModule, synergyModule, compFitModule],
     createRecommendationOptions,
     (draft, target, options) =>
       buildAnalysisBackedTeamContext(
         draft,
-        cachedSource,
+        rankedSource,
         attributeProvider,
         {
           region: options.region,
@@ -327,7 +351,7 @@ function initializeRecommendationRunner(championCatalog: ChampionCatalog): void 
   recommendationRunner = new RecommendationRunner(engine);
   simulationRecommendationRunner = new RecommendationRunner(engine);
   threatForecastProvider = new RankedThreatForecastProvider(
-    cachedSource,
+    rankedSource,
     attributeProvider,
     proAnalyticsProvider,
   );
@@ -385,9 +409,9 @@ async function fetchDirectProSnapshot(
   championCatalog: ChampionCatalog,
 ) {
   const patches = deriveProPatchWindow(championCatalog.version());
-  const result = await new LeaguepediaCargoAdapter(championCatalog).fetchDrafts(
-    patches,
-  );
+  const result = await new LeaguepediaCargoAdapter(championCatalog, {
+    authentication: leaguepediaBotAuthenticationFromEnvironment(process.env) ?? undefined,
+  }).fetchDrafts(patches);
 
   if (result.drafts.length === 0 || result.warnings.length > 0) {
     throw new Error(
@@ -826,6 +850,7 @@ function startLcu(championCatalog: ChampionCatalog): void {
 
   lcu.on("disconnected", () => {
     latestRawChampSelectSession = null;
+    liveRoleOverrides.clear();
     sendLcuStatus({ connection: "waiting", phase: null });
     const draftState = createEmptyDraftState(null);
     sendDraftState(draftState);
@@ -833,6 +858,10 @@ function startLcu(championCatalog: ChampionCatalog): void {
   });
 
   lcu.on("phaseChanged", (phase) => {
+    if (phase !== "ChampSelect") {
+      liveRoleOverrides.clear();
+    }
+
     sendLcuStatus({ connection: "connected", phase });
     scheduleDraftStatePush();
   });
@@ -907,6 +936,28 @@ ipcMain.handle(ipcChannels.draftTargetSet, (_event, cellId: unknown) => {
   targetSelectionState = selection.state;
   requestRecommendations(latestDraftState);
 });
+ipcMain.handle(
+  ipcChannels.draftRoleSet,
+  (_event, cellId: unknown, role: unknown) => {
+    if (
+      !latestDraftState ||
+      typeof cellId !== "number" ||
+      !Number.isInteger(cellId) ||
+      (role !== null && !isRole(role)) ||
+      !latestDraftState.allies.some((ally) => ally.cellId === cellId)
+    ) {
+      return;
+    }
+
+    if (role === null) {
+      liveRoleOverrides.delete(cellId);
+    } else {
+      liveRoleOverrides.set(cellId, role);
+    }
+
+    scheduleDraftStatePush();
+  },
+);
 ipcMain.handle(
   ipcChannels.draftThreatTargetSet,
   (_event, cellId: unknown, role: unknown) => {

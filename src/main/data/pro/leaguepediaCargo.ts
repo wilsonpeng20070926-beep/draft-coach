@@ -22,6 +22,31 @@ export interface LeaguepediaCargoOptions {
   maxRetries?: number;
   fetchImpl?: CargoFetch;
   delay?: (milliseconds: number) => Promise<void>;
+  authentication?: LeaguepediaBotAuthentication;
+}
+
+export interface LeaguepediaBotAuthentication {
+  username: string;
+  botPassword: string;
+}
+
+export function leaguepediaBotAuthenticationFromEnvironment(
+  environment: NodeJS.ProcessEnv,
+): LeaguepediaBotAuthentication | null {
+  const username = environment.LEAGUEPEDIA_BOT_USERNAME?.trim();
+  const botPassword = environment.LEAGUEPEDIA_BOT_PASSWORD;
+
+  if (!username && !botPassword) {
+    return null;
+  }
+
+  if (!username || !botPassword) {
+    throw new Error(
+      "LEAGUEPEDIA_BOT_USERNAME and LEAGUEPEDIA_BOT_PASSWORD must be configured together",
+    );
+  }
+
+  return { username, botPassword };
 }
 
 export interface LeaguepediaFetchResult {
@@ -77,6 +102,9 @@ export class LeaguepediaCargoAdapter {
   private readonly fetchImpl: CargoFetch;
   private readonly delay: (milliseconds: number) => Promise<void>;
   private readonly championLookup: Map<string, ChampionRef>;
+  private readonly authentication: LeaguepediaBotAuthentication | null;
+  private readonly cookies = new Map<string, string>();
+  private authenticated = false;
 
   constructor(
     catalog: ChampionCatalog,
@@ -91,6 +119,7 @@ export class LeaguepediaCargoAdapter {
     this.fetchImpl = options.fetchImpl ?? (fetch as CargoFetch);
     this.delay = options.delay ?? ((milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)));
     this.championLookup = createChampionLookup(catalog);
+    this.authentication = options.authentication ?? null;
   }
 
   async fetchDrafts(
@@ -98,6 +127,7 @@ export class LeaguepediaCargoAdapter {
     ifNoneMatch?: string | null,
   ): Promise<LeaguepediaFetchResult> {
     validatePatches(patches);
+    await this.ensureAuthenticated();
     const drafts: NormalizedProDraft[] = [];
     const warnings: string[] = [];
     let offset = 0;
@@ -168,6 +198,7 @@ export class LeaguepediaCargoAdapter {
             Accept: "application/json",
             "User-Agent": this.userAgent,
             ...(ifNoneMatch ? { "If-None-Match": ifNoneMatch } : {}),
+            ...(this.cookieHeader() ? { Cookie: this.cookieHeader() } : {}),
           },
           signal: controller.signal,
         });
@@ -226,6 +257,86 @@ export class LeaguepediaCargoAdapter {
     }
 
     throw lastError ?? new Error("Leaguepedia Cargo request failed");
+  }
+
+  private async ensureAuthenticated(): Promise<void> {
+    if (!this.authentication || this.authenticated) {
+      return;
+    }
+
+    const tokenResponse = await this.postApi(new URLSearchParams({
+      action: "query",
+      format: "json",
+      meta: "tokens",
+      type: "login",
+    }));
+    const loginToken = loginTokenFrom(tokenResponse);
+    const loginResponse = await this.postApi(new URLSearchParams({
+      action: "login",
+      format: "json",
+      lgname: this.authentication.username,
+      lgpassword: this.authentication.botPassword,
+      lgtoken: loginToken,
+    }));
+
+    if (loginResultFrom(loginResponse) !== "Success") {
+      throw new NonRetryableCargoError(
+        "Leaguepedia bot authentication failed; verify the account email, bot username, password, and Cargo permission",
+      );
+    }
+
+    this.authenticated = true;
+  }
+
+  private async postApi(body: URLSearchParams): Promise<unknown> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const response = await this.fetchImpl(this.endpoint, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          "User-Agent": this.userAgent,
+          ...(this.cookieHeader() ? { Cookie: this.cookieHeader() } : {}),
+        },
+        body: body.toString(),
+        signal: controller.signal,
+      });
+      this.captureCookies(response.headers);
+
+      if (!response.ok) {
+        throw new NonRetryableCargoError(
+          `Leaguepedia authentication request failed with status ${response.status}`,
+        );
+      }
+
+      return await response.json();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private captureCookies(headers: { get(name: string): string | null }): void {
+    const withSetCookie = headers as typeof headers & { getSetCookie?: () => string[] };
+    const values = withSetCookie.getSetCookie?.()
+      ?? splitSetCookieHeader(headers.get("set-cookie"));
+
+    for (const value of values) {
+      const pair = value.split(";", 1)[0]?.trim();
+      const separator = pair?.indexOf("=") ?? -1;
+
+      if (pair && separator > 0) {
+        this.cookies.set(pair.slice(0, separator), pair.slice(separator + 1));
+      }
+    }
+  }
+
+  private cookieHeader(): string {
+    return [...this.cookies.entries()]
+      .map(([name, value]) => `${name}=${value}`)
+      .join("; ");
   }
 
   private createUrl(patches: string[], offset: number): string {
@@ -331,6 +442,42 @@ export class LeaguepediaCargoAdapter {
       return champion;
     });
   }
+}
+
+function loginTokenFrom(value: unknown): string {
+  if (!value || typeof value !== "object") {
+    throw new NonRetryableCargoError("Leaguepedia login token response is invalid");
+  }
+
+  const query = "query" in value ? value.query : null;
+  const tokens = query && typeof query === "object" && "tokens" in query
+    ? query.tokens
+    : null;
+  const token = tokens && typeof tokens === "object" && "logintoken" in tokens
+    ? tokens.logintoken
+    : null;
+
+  if (typeof token !== "string" || token.length === 0) {
+    throw new NonRetryableCargoError("Leaguepedia login token response is invalid");
+  }
+
+  return token;
+}
+
+function loginResultFrom(value: unknown): string | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const login = "login" in value ? value.login : null;
+  return login && typeof login === "object" && "result" in login
+    && typeof login.result === "string"
+    ? login.result
+    : null;
+}
+
+function splitSetCookieHeader(value: string | null): string[] {
+  return value ? value.split(/,(?=\s*[^;,\s]+=)/u) : [];
 }
 
 function createCargoWhere(patches: string[]): string {

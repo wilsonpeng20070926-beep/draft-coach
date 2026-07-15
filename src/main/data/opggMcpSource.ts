@@ -53,6 +53,7 @@ interface LaneMetaRow {
 }
 
 const DEFAULT_ENDPOINT = "https://mcp-api.op.gg/mcp";
+const TOOL_REQUEST_TIMEOUT_MS = 12_000;
 const NO_NOTABLE_SYNERGY_SCORE = 0.5;
 const MIN_NOTABLE_SYNERGY_GAMES = 500;
 const SYNERGY_SAMPLE_PSEUDO_GAMES = 500;
@@ -109,6 +110,10 @@ export class OpggMcpSource implements MetaDataSource {
 
     for (const row of parseLaneMetaRows(text, position)) {
       const champion = await this.resolveChampion(row.championName);
+
+      if (champion.id <= 0) {
+        continue;
+      }
 
       this.knownChampionPositions.set(champion.id, position);
       entries.push({
@@ -226,14 +231,24 @@ export class OpggMcpSource implements MetaDataSource {
     };
   }
 
+  async warmUp(): Promise<void> {
+    await this.getClient();
+  }
+
   async close(): Promise<void> {
     if (!this.clientPromise) {
       return;
     }
 
-    const client = await this.clientPromise;
-    await client.close();
+    const clientPromise = this.clientPromise;
     this.clientPromise = null;
+
+    try {
+      const client = await clientPromise;
+      await client.close();
+    } catch {
+      // A failed connection has no open client to close.
+    }
   }
 
   private async getAnalysisMatchup(
@@ -358,6 +373,10 @@ export class OpggMcpSource implements MetaDataSource {
       for (const row of rowsByPosition[position]) {
         const champion = await this.resolveChampion(row.championName);
 
+        if (champion.id <= 0) {
+          continue;
+        }
+
         const rawWeight =
           row.roleRate && row.roleRate > 0
             ? row.roleRate
@@ -380,7 +399,11 @@ export class OpggMcpSource implements MetaDataSource {
 
   private async callToolText(name: string, args: Record<string, unknown>): Promise<string> {
     const client = await this.getClient();
-    const result = await client.callTool({ name, arguments: args });
+    const result = await client.callTool(
+      { name, arguments: args },
+      undefined,
+      { timeout: TOOL_REQUEST_TIMEOUT_MS },
+    );
     const text = extractToolText(result);
 
     if (!text) {
@@ -392,7 +415,10 @@ export class OpggMcpSource implements MetaDataSource {
 
   private async getClient(): Promise<Client> {
     if (!this.clientPromise) {
-      this.clientPromise = this.connect();
+      this.clientPromise = this.connect().catch((error) => {
+        this.clientPromise = null;
+        throw error;
+      });
     }
 
     return this.clientPromise;

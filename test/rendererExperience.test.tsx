@@ -128,6 +128,7 @@ describe("Phase 6 renderer experience", () => {
           purpose: "recommend",
         }}
         onSelectAlly={() => undefined}
+        onAssignAllyRole={() => undefined}
         onSelectEnemy={() => undefined}
       />,
     );
@@ -135,6 +136,8 @@ describe("Phase 6 renderer experience", () => {
     expect(html).toContain('data-target="true"');
     expect(html).toContain('aria-label="Recommend for middle ally"');
     expect(html).toContain('aria-label="Prepare to counter middle enemy"');
+    expect(html).toContain('aria-label="Role for ally slot 0"');
+    expect(html).toContain("Choose role");
   });
 
   it("renders stale and ranked-only professional states as visible notices", () => {

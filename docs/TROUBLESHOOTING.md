@@ -13,11 +13,13 @@ Draft Coach is connected to League, but League is currently in lobby, matchmakin
 
 ## No Recommendations
 
-Recommendations appear once Draft Coach knows your role. This can require League role assignment, pick intent, or role inference from available draft data.
+Recommendations appear once Draft Coach knows your role. Ranked queues normally provide it automatically. Custom and practice drafts often do not; use the `Role` menu on your allied slot to choose top, jungle, middle, bottom, or support.
 
 ## Loading Feels Slow
 
 The first useful run may fetch Data Dragon and OP.GG-backed data. Later drafts should be faster because Draft Coach caches champion catalog and recommendation data locally.
+
+If OP.GG is temporarily unavailable, Draft Coach first uses its last-known-good cache. With no cache, it still shows neutral tag-based candidates and labels the board as an offline fallback instead of returning zero recommendations.
 
 ## Limited Data Note Appears
 

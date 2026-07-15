@@ -3,12 +3,14 @@ import type {
   DraftPlayer,
   DraftState,
   DraftTarget,
+  Role,
 } from "../../shared/types";
 
 interface DraftBoardProps {
   draftState: DraftState;
   target: DraftTarget | null;
   onSelectAlly: (cellId: number) => void;
+  onAssignAllyRole?: (cellId: number, role: Role | null) => void;
   onSelectEnemy?: (cellId: number, role: NonNullable<DraftPlayer["role"]>) => void;
 }
 
@@ -16,6 +18,7 @@ function DraftBoard({
   draftState,
   target,
   onSelectAlly,
+  onAssignAllyRole,
   onSelectEnemy,
 }: DraftBoardProps): JSX.Element {
   const targetOpponent = resolveVisibleLaneOpponent(draftState, target);
@@ -29,6 +32,11 @@ function DraftBoard({
           laneOpponentCellId={null}
           targetCellId={target?.side === "ally" ? target.cellId : null}
           onSelectPlayer={(player) => onSelectAlly(player.cellId)}
+          onAssignRole={
+            onAssignAllyRole
+              ? (player, role) => onAssignAllyRole(player.cellId, role)
+              : undefined
+          }
         />
         <TeamColumn
           title="Enemy team"
@@ -58,12 +66,14 @@ function TeamColumn({
   laneOpponentCellId,
   targetCellId,
   onSelectPlayer,
+  onAssignRole,
 }: {
   title: string;
   players: DraftPlayer[];
   laneOpponentCellId: number | null;
   targetCellId: number | null;
   onSelectPlayer?: (player: DraftPlayer) => void;
+  onAssignRole?: (player: DraftPlayer, role: Role | null) => void;
 }): JSX.Element {
   return (
     <div className="team-column">
@@ -76,6 +86,7 @@ function TeamColumn({
             isLaneOpponent={laneOpponentCellId === player.cellId}
             isTarget={targetCellId === player.cellId}
             onSelect={onSelectPlayer}
+            onAssignRole={onAssignRole}
           />
         ))}
       </ol>
@@ -88,11 +99,13 @@ function PlayerSeat({
   isLaneOpponent,
   isTarget,
   onSelect,
+  onAssignRole,
 }: {
   player: DraftPlayer;
   isLaneOpponent: boolean;
   isTarget: boolean;
   onSelect?: (player: DraftPlayer) => void;
+  onAssignRole?: (player: DraftPlayer, role: Role | null) => void;
 }): JSX.Element {
   const champion = player.champion;
 
@@ -107,7 +120,7 @@ function PlayerSeat({
       <button
         className="seat-button"
         type="button"
-        disabled={!onSelect || (player.side === "enemy" && !player.role)}
+        disabled={!onSelect || !player.role}
         aria-pressed={isTarget}
         aria-label={
           onSelect
@@ -133,6 +146,25 @@ function PlayerSeat({
         {player.isLocalPlayer ? <span className="seat-badge">You</span> : null}
         {isLaneOpponent ? <span className="seat-badge opponent">vs target</span> : null}
       </button>
+      {player.side === "ally" && onAssignRole ? (
+        <label className="role-override">
+          <span>Role</span>
+          <select
+            aria-label={`Role for ally slot ${player.cellId}`}
+            value={player.role ?? ""}
+            onChange={(event) =>
+              onAssignRole(player, event.target.value ? event.target.value as Role : null)
+            }
+          >
+            <option value="">Choose role</option>
+            <option value="top">Top</option>
+            <option value="jungle">Jungle</option>
+            <option value="middle">Middle</option>
+            <option value="bottom">Bottom</option>
+            <option value="utility">Support</option>
+          </select>
+        </label>
+      ) : null}
     </li>
   );
 }

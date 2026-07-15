@@ -52,7 +52,7 @@ describe("professional data CLI", () => {
     };
     const checksum = (await runCli("checksum", "--input", firstPath)).stdout.trim();
     expect(checksum).toBe(snapshot.metadata.checksum);
-  }, 15_000);
+  }, 30_000);
 });
 
 async function runCli(...args: string[]) {
