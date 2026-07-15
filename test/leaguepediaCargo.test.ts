@@ -130,6 +130,49 @@ describe("Leaguepedia Cargo adapter", () => {
     expect(result.drafts).toHaveLength(1);
     expect(delays).toEqual([500]);
   });
+
+  it("authenticates with a bot password and carries the session cookie into Cargo queries", async () => {
+    const requests: Array<{ url: string; init: RequestInit }> = [];
+    let call = 0;
+    const adapter = new LeaguepediaCargoAdapter(createFixtureCatalog(), {
+      minimumRequestIntervalMs: 0,
+      authentication: {
+        username: "VerifiedUser@DraftCoach",
+        botPassword: "test-secret",
+      },
+      fetchImpl: async (url, init) => {
+        requests.push({ url, init });
+        call += 1;
+
+        if (call === 1) {
+          return response(200, {
+            query: { tokens: { logintoken: "token+\\" } },
+          }, { "set-cookie": "session=anonymous; Path=/; HttpOnly" });
+        }
+
+        if (call === 2) {
+          return response(200, {
+            login: { result: "Success" },
+          }, { "set-cookie": "session=authenticated; Path=/; HttpOnly" });
+        }
+
+        return response(200, fixture);
+      },
+    });
+
+    const result = await adapter.fetchDrafts(["26.13"]);
+
+    expect(result.drafts).toHaveLength(1);
+    expect(requests).toHaveLength(3);
+    expect(requests[0]).toMatchObject({
+      url: "https://lol.fandom.com/api.php",
+      init: { method: "POST" },
+    });
+    expect(String(requests[1].init.body)).toContain("lgname=VerifiedUser%40DraftCoach");
+    expect(requests[1].init.headers).toMatchObject({ Cookie: "session=anonymous" });
+    expect(requests[2].init.method).toBe("GET");
+    expect(requests[2].init.headers).toMatchObject({ Cookie: "session=authenticated" });
+  });
 });
 
 function response(

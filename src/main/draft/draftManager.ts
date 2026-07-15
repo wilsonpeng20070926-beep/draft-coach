@@ -85,6 +85,37 @@ export function createEmptyDraftState(phase: Phase | null = null): DraftState {
   };
 }
 
+export function applyDraftRoleOverrides(
+  draftState: DraftState,
+  overrides: ReadonlyMap<number, Role>,
+): DraftState {
+  if (overrides.size === 0) {
+    return draftState;
+  }
+
+  const allies = draftState.allies.map((ally) => {
+    const role = overrides.get(ally.cellId);
+
+    return role
+      ? {
+          ...ally,
+          role,
+          roleSource: "manual" as const,
+          roleConfidence: 1,
+        }
+      : ally;
+  });
+  const localPlayer = draftState.localPlayer
+    ? allies.find((ally) => ally.cellId === draftState.localPlayer?.cellId) ?? null
+    : null;
+
+  return {
+    ...draftState,
+    allies,
+    localPlayer,
+  };
+}
+
 export async function inferDraftStateEnemyRoles(
   draftState: DraftState,
   getRoleFit: (champion: NonNullable<DraftPlayer["champion"]>) => Promise<RoleFit>,

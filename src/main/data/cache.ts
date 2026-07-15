@@ -1,3 +1,5 @@
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 import type { ChampionRef, Role } from "../../shared/types";
 import type {
   ChampionAnalysis,
@@ -11,6 +13,7 @@ import type {
 interface CachedMetaDataSourceOptions {
   ttlMs: number;
   patchVersion: string;
+  cacheFile?: string;
 }
 
 interface CacheEntry<T> {
@@ -18,9 +21,17 @@ interface CacheEntry<T> {
   value: T;
 }
 
+interface PersistedCache {
+  schemaVersion: 1;
+  patchVersion: string;
+  entries: Record<string, CacheEntry<unknown>>;
+}
+
 export class CachedMetaDataSource implements MetaDataSource {
   private readonly cache = new Map<string, CacheEntry<unknown>>();
   private readonly pending = new Map<string, Promise<unknown>>();
+  private loadPromise: Promise<void> | null = null;
+  private persistPromise: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly source: MetaDataSource,
@@ -81,6 +92,7 @@ export class CachedMetaDataSource implements MetaDataSource {
   }
 
   private async getOrSet<T>(keyParts: ReadonlyArray<string | number>, load: () => Promise<T>): Promise<T> {
+    await this.ensureLoaded();
     const key = this.createKey(keyParts);
     const cached = this.cache.get(key) as CacheEntry<T> | undefined;
     const now = Date.now();
@@ -96,13 +108,21 @@ export class CachedMetaDataSource implements MetaDataSource {
     }
 
     const promise = load()
-      .then((value) => {
+      .then(async (value) => {
         this.cache.set(key, {
           expiresAt: Date.now() + this.options.ttlMs,
           value,
         });
-
+        await this.persist();
         return value;
+      })
+      .catch((error) => {
+        if (cached) {
+          console.warn("[RankedData] live refresh failed; using stale local cache", toError(error).message);
+          return cached.value;
+        }
+
+        throw error;
       })
       .finally(() => {
         this.pending.delete(key);
@@ -115,4 +135,91 @@ export class CachedMetaDataSource implements MetaDataSource {
   private createKey(keyParts: ReadonlyArray<string | number>): string {
     return JSON.stringify([this.options.patchVersion, ...keyParts]);
   }
+
+  private ensureLoaded(): Promise<void> {
+    if (!this.loadPromise) {
+      this.loadPromise = this.loadPersistedCache();
+    }
+
+    return this.loadPromise;
+  }
+
+  private async loadPersistedCache(): Promise<void> {
+    const cacheFile = this.options.cacheFile;
+
+    if (!cacheFile) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(await readFile(cacheFile, "utf8")) as Partial<PersistedCache>;
+
+      if (
+        parsed.schemaVersion !== 1 ||
+        parsed.patchVersion !== this.options.patchVersion ||
+        !parsed.entries ||
+        typeof parsed.entries !== "object"
+      ) {
+        return;
+      }
+
+      for (const [key, entry] of Object.entries(parsed.entries)) {
+        if (isCacheEntry(entry)) {
+          this.cache.set(key, entry);
+        }
+      }
+    } catch (error) {
+      if (!isMissingFileError(error)) {
+        console.warn("[RankedData] local cache could not be read", toError(error).message);
+      }
+    }
+  }
+
+  private persist(): Promise<void> {
+    const cacheFile = this.options.cacheFile;
+
+    if (!cacheFile) {
+      return Promise.resolve();
+    }
+
+    this.persistPromise = this.persistPromise.then(async () => {
+      const payload: PersistedCache = {
+        schemaVersion: 1,
+        patchVersion: this.options.patchVersion,
+        entries: Object.fromEntries(this.cache),
+      };
+      const temporaryFile = `${cacheFile}.tmp`;
+
+      try {
+        await mkdir(dirname(cacheFile), { recursive: true });
+        await writeFile(temporaryFile, `${JSON.stringify(payload)}\n`, "utf8");
+        await rename(temporaryFile, cacheFile);
+      } catch (error) {
+        console.warn("[RankedData] local cache could not be saved", toError(error).message);
+      }
+    });
+
+    return this.persistPromise;
+  }
+}
+
+function isCacheEntry(value: unknown): value is CacheEntry<unknown> {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const entry = value as Partial<CacheEntry<unknown>>;
+  return typeof entry.expiresAt === "number" && Number.isFinite(entry.expiresAt) && "value" in entry;
+}
+
+function isMissingFileError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    "code" in error &&
+    (error as NodeJS.ErrnoException).code === "ENOENT"
+  );
+}
+
+function toError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error));
 }

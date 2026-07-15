@@ -20,6 +20,26 @@ afterEach(async () => {
 });
 
 describe("static professional data source", () => {
+  it("treats an unpublished remote snapshot as an honest ranked-only state", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "draft-coach-pro-unpublished-"));
+    directories.push(directory);
+    const source = new StaticSnapshotProDataSource({
+      cacheDirectory: directory,
+      remoteUrl: "https://example.test/pro-snapshot.json.gz",
+      refreshIntervalMs: 0,
+      fetchImpl: async () => response(404, Buffer.alloc(0)),
+    });
+
+    await source.start();
+    await source.refresh("manual");
+
+    expect(source.getStatus()).toMatchObject({
+      state: "ranked-only",
+      lastError: null,
+      gameCount: 0,
+    });
+  });
+
   it("atomically retains last-known-good when a refresh is corrupt", async () => {
     const directory = await tempDirectory();
     const good = snapshot("good", 30);
@@ -182,9 +202,13 @@ function responseJson(value: unknown) {
 }
 
 function responseBytes(bytes: Buffer) {
+  return response(200, bytes);
+}
+
+function response(status: number, bytes: Buffer) {
   return {
-    ok: true,
-    status: 200,
+    ok: status >= 200 && status < 300,
+    status,
     headers: { get: () => null },
     async arrayBuffer() {
       const copy = new Uint8Array(bytes.length);

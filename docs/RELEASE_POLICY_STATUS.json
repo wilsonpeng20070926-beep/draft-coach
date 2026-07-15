@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "reviewedAt": "2026-07-13",
+  "reviewedAt": "2026-07-15",
   "uncertifiedPreview": {
     "status": "owner-authorized",
     "ownerAuthorizedAt": "2026-07-13",
@@ -28,11 +28,12 @@
     {
       "id": "leaguepedia-snapshot-redistribution",
       "status": "blocked",
-      "summary": "Leaguepedia documents Cargo access as a courtesy, warns that the API is unstable, and publishes community content under CC BY-SA 3.0; no project-specific snapshot redistribution approval is recorded.",
-      "ownerAction": "Confirm attribution, share-alike obligations, automated request posture, and redistribution of derived aggregate snapshot assets with Leaguepedia/Fandom before enabling snapshot publishing.",
+      "summary": "Leaguepedia community guidance requires authenticated API queries from an email-verified account using a bot password with Cargo permission and indicates that API-derived data is likely CC BY-SA 3.0 with Leaguepedia attribution. The Fandom admin review is still open, so the exact share-alike scope and project-specific snapshot redistribution approval remain unresolved.",
+      "ownerAction": "Configure the verified least-privilege bot identity only after API-access approval, and obtain explicit Fandom admin confirmation of attribution, share-alike scope, cadence, caching, and redistribution of derived aggregate snapshot assets before enabling snapshot publishing.",
       "sourceUrls": [
         "https://lol.fandom.com/wiki/Help:Leaguepedia_API",
-        "https://lol.fandom.com/wiki/Category:Developer_Documentation"
+        "https://www.mediawiki.org/wiki/API:Login",
+        "https://lol.fandom.com/wiki/Special:BotPasswords"
       ]
     },
     {

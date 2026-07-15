@@ -84,6 +84,23 @@ describe("OP.GG fixture field mappings", () => {
     });
   });
 
+  it("does not recommend a champion that is absent from the current catalog", async () => {
+    const source = new OpggMcpSource(catalog);
+    (source as unknown as { callToolText: () => Promise<string> }).callToolText = async () =>
+      [
+        "class LolListLaneMetaChampions: data",
+        "class Data: positions",
+        "class Positions: mid",
+        "class Mid: champion,play,win,win_rate,pick_rate,tier",
+        "",
+        'LolListLaneMetaChampions(Data(Positions([Mid("Unknown Future Champion",1000,520,0.52,0.05,1),Mid("Ahri",2000,1040,0.52,0.1,1)])))',
+      ].join("\n");
+
+    const entries = await source.getLaneMeta("middle", "global", "emerald_plus");
+
+    expect(entries.map((entry) => entry.champion.name)).toEqual(["Ahri"]);
+  });
+
   it("extracts all-position role fit rows from the champion-position fallback fixture", () => {
     const rowsByPosition = hooks.parseAllLaneMetaRows(fixtureText("champion-positions"));
 

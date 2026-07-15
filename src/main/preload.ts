@@ -30,6 +30,8 @@ const api: DraftCoachApi = {
   getConfig: () => ipcRenderer.invoke(ipcChannels.configGet),
   setConfig: (patch: AppConfigPatch) => ipcRenderer.invoke(ipcChannels.configSet, patch),
   setDraftTarget: (cellId: number) => ipcRenderer.invoke(ipcChannels.draftTargetSet, cellId),
+  setDraftRole: (cellId, role) =>
+    ipcRenderer.invoke(ipcChannels.draftRoleSet, cellId, role),
   setDraftThreatTarget: (cellId, role) =>
     ipcRenderer.invoke(ipcChannels.draftThreatTargetSet, cellId, role),
   pinLiveThreat: (championId, role) =>

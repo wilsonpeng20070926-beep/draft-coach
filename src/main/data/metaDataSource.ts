@@ -7,7 +7,7 @@ export interface LaneMetaEntry {
   champion: ChampionRef;
   winRate: number;
   tier: number;
-  dataQuality?: "observed" | "target-fallback" | "pro-supported";
+  dataQuality?: "observed" | "target-fallback" | "pro-supported" | "catalog-fallback";
   pickRate?: number;
   play?: number;
   roleRate?: number;

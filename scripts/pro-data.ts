@@ -9,7 +9,10 @@ import {
   canonicalStringify,
   withRawProDraftChecksum,
 } from "../src/main/data/pro/checksum";
-import { LeaguepediaCargoAdapter } from "../src/main/data/pro/leaguepediaCargo";
+import {
+  LeaguepediaCargoAdapter,
+  leaguepediaBotAuthenticationFromEnvironment,
+} from "../src/main/data/pro/leaguepediaCargo";
 import { deriveProPatchWindow } from "../src/main/data/pro/patchWindow";
 import {
   validateProDataSnapshot,
@@ -88,7 +91,9 @@ async function fetchRawDrafts(): Promise<void> {
     throw new Error("--patches must contain the current patch and exactly two previous patches");
   }
 
-  const adapter = new LeaguepediaCargoAdapter(catalog);
+  const adapter = new LeaguepediaCargoAdapter(catalog, {
+    authentication: leaguepediaBotAuthenticationFromEnvironment(process.env) ?? undefined,
+  });
   const fetched = await adapter.fetchDrafts(patches, args.etag ?? null);
 
   if (fetched.notModified) {

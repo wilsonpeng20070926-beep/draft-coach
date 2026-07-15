@@ -78,6 +78,7 @@ interface ScoredCandidate {
 interface LatestTargetScore {
   scored: ScoredCandidate[];
   hadFactorFailure: boolean;
+  usedCatalogFallback: boolean;
   teamContext: TeamContext;
   targetPlayer: DraftState["allies"][number];
 }
@@ -138,6 +139,10 @@ export class RecommendationEngine {
       };
     }
 
+    const usedCatalogFallback = laneMeta.some(
+      (entry) => entry.dataQuality === "catalog-fallback",
+    );
+
     const ctx = await this.createContext(draft, target, options);
     const proEntries = this.safeProCandidateEntries(
       laneMeta,
@@ -172,6 +177,7 @@ export class RecommendationEngine {
     this.latestByTarget.set(key, {
       scored,
       hadFactorFailure: hasLimitedData,
+      usedCatalogFallback,
       teamContext: ctx,
       targetPlayer,
     });
@@ -180,6 +186,7 @@ export class RecommendationEngine {
     return this.combineScoredCandidates(
       scored,
       hasLimitedData,
+      usedCatalogFallback,
       options,
       ctx,
       targetPlayer,
@@ -197,6 +204,7 @@ export class RecommendationEngine {
     return this.combineScoredCandidates(
       latest.scored,
       latest.hadFactorFailure,
+      latest.usedCatalogFallback,
       this.getOptions(),
       latest.teamContext,
       latest.targetPlayer,
@@ -303,6 +311,7 @@ export class RecommendationEngine {
   private combineScoredCandidates(
     scored: ScoredCandidate[],
     hasLimitedData: boolean,
+    usedCatalogFallback: boolean,
     options: RecommendationEngineOptions,
     teamContext: TeamContext | null,
     targetPlayer: DraftState["allies"][number],
@@ -325,7 +334,11 @@ export class RecommendationEngine {
     return {
       recommendations,
       evaluation,
-      limitedDataNote: createLimitedDataNote(hasLimitedData, options.weights),
+      limitedDataNote: createLimitedDataNote(
+        hasLimitedData,
+        usedCatalogFallback,
+        options.weights,
+      ),
       teamContext,
       categories,
       evidenceBalance,
@@ -572,9 +585,17 @@ function getFactorWeight(factor: string, weights: FactorWeights): number {
   return 0;
 }
 
-function createLimitedDataNote(hasLimitedData: boolean, weights: FactorWeights): string | null {
+function createLimitedDataNote(
+  hasLimitedData: boolean,
+  usedCatalogFallback: boolean,
+  weights: FactorWeights,
+): string | null {
   if (areAllWeightsZero(weights)) {
     return "All weights are zero; showing meta-only fallback.";
+  }
+
+  if (usedCatalogFallback) {
+    return "Live OP.GG data is unavailable; showing a tag-based offline fallback.";
   }
 
   return hasLimitedData ? "Some OP.GG factor data was unavailable; base meta filled the gaps." : null;
@@ -671,7 +692,8 @@ export function createMetaContribution(
 ): ScoreContribution {
   if (
     entry.dataQuality === "target-fallback" ||
-    entry.dataQuality === "pro-supported"
+    entry.dataQuality === "pro-supported" ||
+    entry.dataQuality === "catalog-fallback"
   ) {
     return {
       factor: "meta",
@@ -679,7 +701,9 @@ export function createMetaContribution(
       reasons: [
         entry.dataQuality === "pro-supported"
           ? "Ranked meta: no role-specific baseline"
-          : "Meta: no role-specific ranked baseline",
+          : entry.dataQuality === "catalog-fallback"
+            ? "Offline role fit: catalog tag prior"
+            : "Meta: no role-specific ranked baseline",
       ],
       source: "ranked",
     };
@@ -714,7 +738,8 @@ export function scoreLaneMetaEntry(
 ): number {
   if (
     entry.dataQuality === "target-fallback" ||
-    entry.dataQuality === "pro-supported"
+    entry.dataQuality === "pro-supported" ||
+    entry.dataQuality === "catalog-fallback"
   ) {
     return 0.5;
   }

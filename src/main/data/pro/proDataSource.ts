@@ -184,6 +184,12 @@ export class StaticSnapshotProDataSource implements ProDataSource {
         }
       }
 
+      if (!this.snapshot && isUnpublishedSnapshotError(error)) {
+        this.status = emptyStatus("ranked-only");
+        this.emitStatus();
+        return null;
+      }
+
       this.setError(toError(error).message);
       return this.snapshot;
     }
@@ -325,4 +331,8 @@ function toError(error: unknown): Error {
 
 function isGzip(bytes: Buffer): boolean {
   return bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
+}
+
+function isUnpublishedSnapshotError(error: unknown): boolean {
+  return toError(error).message === "Professional snapshot request failed with status 404";
 }

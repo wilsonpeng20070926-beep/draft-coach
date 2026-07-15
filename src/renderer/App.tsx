@@ -190,6 +190,9 @@ function App(): JSX.Element {
             draftState={draftState}
             target={recommendationUpdate.target}
             onSelectAlly={(cellId) => void window.api.setDraftTarget(cellId)}
+            onAssignAllyRole={(cellId, role) =>
+              void window.api.setDraftRole(cellId, role)
+            }
             onSelectEnemy={(cellId, role) =>
               void window.api.setDraftThreatTarget(cellId, role)
             }

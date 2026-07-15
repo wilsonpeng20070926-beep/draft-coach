@@ -1110,6 +1110,32 @@ h2 {
   font-style: italic;
 }
 
+.role-label[data-role-source="manual"] {
+  color: #9ed8ff;
+}
+
+.role-override {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  margin-left: 54px;
+  color: #9aa8b8;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.role-override select {
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid rgba(166, 185, 207, 0.28);
+  border-radius: 6px;
+  background: #151b22;
+  color: #e8edf3;
+  font: inherit;
+}
+
 .seat-badge {
   position: absolute;
   top: 6px;
