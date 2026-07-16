@@ -34,7 +34,7 @@ This channel is an explicit owner-authorized exception for tags matching `vX.Y.Z
 - [ ] Verify current Leaguepedia Cargo API/request, attribution, caching, and snapshot redistribution terms.
 - [ ] Keep `PRO_SNAPSHOT_FETCH_ENABLED` unset until the Leaguepedia API-access review is recorded and approved.
 - [ ] Keep `PRO_SNAPSHOT_PUBLISH_ENABLED` unset until the Leaguepedia redistribution review is recorded and approved.
-- [ ] Verify the Leaguepedia account email, create a least-privilege bot password with Cargo permission, and store its username/password only as GitHub Actions secrets.
+- [x] Verify the Leaguepedia account email, create a least-privilege bot password with Cargo permission, and store its username/password only as GitHub Actions secrets.
 - [ ] Confirm no Oracle's Elixir or other noncommercial-only data is release-critical or included in published assets.
 - [ ] `npm run release:policy:report`
 - [ ] Resolve every blocked public gate in `docs/RELEASE_POLICY_STATUS.json`.

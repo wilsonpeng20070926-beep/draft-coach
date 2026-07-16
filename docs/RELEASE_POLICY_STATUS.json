@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "reviewedAt": "2026-07-15",
+  "reviewedAt": "2026-07-16",
   "uncertifiedPreview": {
     "status": "owner-authorized",
     "ownerAuthorizedAt": "2026-07-13",
@@ -28,8 +28,8 @@
     {
       "id": "leaguepedia-snapshot-redistribution",
       "status": "blocked",
-      "summary": "Leaguepedia community guidance requires authenticated API queries from an email-verified account using a bot password with Cargo permission and indicates that API-derived data is likely CC BY-SA 3.0 with Leaguepedia attribution. The Fandom admin review is still open, so the exact share-alike scope and project-specific snapshot redistribution approval remain unresolved.",
-      "ownerAction": "Configure the verified least-privilege bot identity only after API-access approval, and obtain explicit Fandom admin confirmation of attribution, share-alike scope, cadence, caching, and redistribution of derived aggregate snapshot assets before enabling snapshot publishing.",
+      "summary": "Leaguepedia community guidance requires authenticated API queries from an email-verified account using a bot password with Cargo permission and indicates that API-derived data is likely CC BY-SA 3.0 with Leaguepedia attribution. The least-privilege bot identity is configured only as GitHub Actions secrets, and both workflow gates remain unset. The Fandom admin review is still open, so API access, cadence, caching, exact share-alike scope, and project-specific snapshot redistribution approval remain unresolved.",
+      "ownerAction": "Keep PRO_SNAPSHOT_FETCH_ENABLED unset until explicit Fandom admin approval of the API request pattern, cadence, and caching is recorded. Obtain explicit confirmation of attribution, share-alike scope, and redistribution of derived aggregate snapshot assets before enabling PRO_SNAPSHOT_PUBLISH_ENABLED.",
       "sourceUrls": [
         "https://lol.fandom.com/wiki/Help:Leaguepedia_API",
         "https://www.mediawiki.org/wiki/API:Login",
