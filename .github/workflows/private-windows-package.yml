@@ -58,7 +58,7 @@ jobs:
           npm run typecheck
           npm test
           npm run evaluation:test
-          npm audit --omit=dev
+          npm audit --omit=dev --audit-level=high
           npm run security:scan
 
       - name: Build unpacked Windows app
