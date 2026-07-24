@@ -19,6 +19,7 @@ interface SettingsPanelProps {
   onClose: () => void;
   proDataStatus: ProDataStatus | null;
   onRefreshProData: () => void;
+  onImportProData: () => void;
 }
 
 const presets: Array<{ label: string; weights: AppConfig["weights"] }> = [
@@ -35,6 +36,7 @@ export function SettingsPanel({
   onClose,
   proDataStatus,
   onRefreshProData,
+  onImportProData,
 }: SettingsPanelProps): JSX.Element {
   const [draftConfig, setDraftConfig] = useState(config);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -165,6 +167,7 @@ export function SettingsPanel({
           <ProDataStatusPanel
             status={proDataStatus}
             onRefresh={onRefreshProData}
+            onImport={onImportProData}
           />
         </section>
 
@@ -302,7 +305,7 @@ export function SettingsPanel({
             </div>
             <div>
               <dt>Data</dt>
-              <dd>Local LCU, Data Dragon, ranked signals, and optional pro snapshots</dd>
+              <dd>Local LCU, Riot Data Dragon, OP.GG ranked signals, and optional pro snapshots</dd>
             </div>
             <div>
               <dt>Storage</dt>

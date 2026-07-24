@@ -13,6 +13,7 @@ import {
   LeaguepediaCargoAdapter,
   leaguepediaBotAuthenticationFromEnvironment,
 } from "../src/main/data/pro/leaguepediaCargo";
+import { OracleElixirCsvAdapter } from "../src/main/data/pro/oraclesElixirCsv";
 import { deriveProPatchWindow } from "../src/main/data/pro/patchWindow";
 import {
   validateProDataSnapshot,
@@ -43,6 +44,11 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command === "import-oe") {
+    await importOracleElixir();
+    return;
+  }
+
   if (command === "validate") {
     const value = await readJson(requiredArg("input"));
     const result = isRawCollection(value)
@@ -70,7 +76,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  throw new Error("Usage: pro-data.ts <fetch|build|validate|checksum> [--key value]");
+  throw new Error("Usage: pro-data.ts <fetch|build|import-oe|validate|checksum> [--key value]");
 }
 
 async function fetchRawDrafts(): Promise<void> {
@@ -78,6 +84,9 @@ async function fetchRawDrafts(): Promise<void> {
   const cacheDirectory = resolve(args.catalogCache ?? ".cache/pro-data-catalog");
   const catalog = new DataDragonChampionCatalog(cacheDirectory);
   await catalog.ready();
+  await catalog.refresh().catch((error: unknown) => {
+    console.warn(`Data Dragon refresh failed; using cached catalog: ${toError(error).message}`);
+  });
 
   if (catalog.all().length === 0) {
     throw new Error("Data Dragon champion catalog is unavailable");
@@ -144,6 +153,53 @@ async function buildSnapshot(): Promise<void> {
     throw new Error(result.errors.join("; "));
   }
 
+  await writeSnapshot(output, snapshot);
+}
+
+async function importOracleElixir(): Promise<void> {
+  const input = resolve(requiredArg("input"));
+  const output = resolve(args.output ?? "data/pro/local-oe-snapshot.json");
+  const cacheDirectory = resolve(args.catalogCache ?? ".cache/pro-data-catalog");
+  const catalog = new DataDragonChampionCatalog(cacheDirectory);
+  await catalog.ready();
+  await catalog.refresh().catch((error: unknown) => {
+    console.warn(`Data Dragon refresh failed; using cached catalog: ${toError(error).message}`);
+  });
+
+  if (catalog.all().length === 0) {
+    throw new Error("Data Dragon champion catalog is unavailable");
+  }
+
+  const patches = args.patches
+    ? args.patches.split(",").map((patch) => patch.trim())
+    : deriveProPatchWindow(catalog.version());
+
+  if (patches.length !== 3 || new Set(patches).size !== 3) {
+    throw new Error("--patches must contain the current patch and exactly two previous patches");
+  }
+
+  const imported = await new OracleElixirCsvAdapter(catalog).importFile(input, patches);
+  const snapshot = buildProDataSnapshot(imported.drafts, {
+    generatedAt: new Date().toISOString(),
+    source: "Oracle's Elixir (local noncommercial import)",
+    sourceUrl: "https://oracleselixir.com/tools/downloads",
+    attribution: "Oracle's Elixir / Tim Sevenhuysen",
+    warnings: imported.warnings,
+    complete: true,
+  });
+  const result = validateProDataSnapshot(snapshot);
+
+  if (!result.valid) {
+    throw new Error(result.errors.join("; "));
+  }
+
+  await writeSnapshot(output, snapshot);
+}
+
+async function writeSnapshot(
+  output: string,
+  snapshot: ProDataSnapshot,
+): Promise<void> {
   await writeJson(output, snapshot);
   await mkdir(dirname(`${output}.gz`), { recursive: true });
   await writeFile(`${output}.gz`, gzipSync(Buffer.from(canonicalStringify(snapshot)), { level: 9 }));

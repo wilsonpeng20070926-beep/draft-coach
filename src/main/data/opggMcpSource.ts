@@ -19,6 +19,8 @@ type OpggPosition = "top" | "jungle" | "mid" | "adc" | "support";
 interface OpggMcpSourceOptions {
   endpoint?: string;
   lang?: string;
+  maxConcurrentRequests?: number;
+  analysisCacheTtlMs?: number;
 }
 
 interface CounterRow {
@@ -52,8 +54,15 @@ interface LaneMetaRow {
   roleRate: number;
 }
 
+interface AnalysisCacheEntry {
+  expiresAt: number;
+  text: Promise<string>;
+}
+
 const DEFAULT_ENDPOINT = "https://mcp-api.op.gg/mcp";
 const TOOL_REQUEST_TIMEOUT_MS = 12_000;
+const DEFAULT_MAX_CONCURRENT_REQUESTS = 4;
+const DEFAULT_ANALYSIS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const NO_NOTABLE_SYNERGY_SCORE = 0.5;
 const MIN_NOTABLE_SYNERGY_GAMES = 500;
 const SYNERGY_SAMPLE_PSEUDO_GAMES = 500;
@@ -83,7 +92,9 @@ export class OpggMcpSource implements MetaDataSource {
   private readonly knownChampionPositions = new Map<number, OpggPosition>();
   private clientPromise: Promise<Client> | null = null;
   private roleFitTablePromise: Promise<Map<number, RoleFit>> | null = null;
-  private readonly analysisSynergyRows = new Map<string, Promise<SynergyRow[]>>();
+  private readonly analysisTextByChampionPosition = new Map<string, AnalysisCacheEntry>();
+  private readonly requestLimiter: ConcurrentRequestLimiter;
+  private readonly analysisCacheTtlMs: number;
   private catalogRefreshAttempted = false;
 
   constructor(
@@ -92,6 +103,11 @@ export class OpggMcpSource implements MetaDataSource {
   ) {
     this.endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
     this.lang = options.lang ?? "en_US";
+    this.requestLimiter = new ConcurrentRequestLimiter(
+      options.maxConcurrentRequests ?? DEFAULT_MAX_CONCURRENT_REQUESTS,
+    );
+    this.analysisCacheTtlMs =
+      options.analysisCacheTtlMs ?? DEFAULT_ANALYSIS_CACHE_TTL_MS;
     this.championsByNormalizedName = new Map();
     this.rebuildChampionLookup();
   }
@@ -139,6 +155,16 @@ export class OpggMcpSource implements MetaDataSource {
     const position = toOpggPosition(role);
 
     try {
+      const analysisResult = await this.getAnalysisMatchup(candidate, opponent, position);
+
+      if (analysisResult.winRate !== null) {
+        return analysisResult;
+      }
+    } catch {
+      // The lane guide below remains available when full analysis fails.
+    }
+
+    try {
       const guideText = await this.callToolText("lol_get_lane_matchup_guide", {
         lang: this.lang,
         position,
@@ -151,14 +177,10 @@ export class OpggMcpSource implements MetaDataSource {
         return guideResult;
       }
     } catch {
-      // Fallback below uses the lighter champion-analysis counter fields.
+      // No direct lane result is available.
     }
 
-    try {
-      return await this.getAnalysisMatchup(candidate, opponent, position);
-    } catch {
-      return { winRate: null };
-    }
+    return { winRate: null };
   }
 
   async getSynergy(
@@ -217,13 +239,7 @@ export class OpggMcpSource implements MetaDataSource {
     _region: string,
     _rank: string,
   ): Promise<ChampionAnalysis> {
-    const text = await this.callToolText("lol_get_champion_analysis", {
-      game_mode: "ranked",
-      champion: toOpggChampionToken(champion),
-      position: toOpggPosition(role),
-      lang: this.lang,
-      desired_output_fields: ["data.{damage_type,mythic_items}", ...analysisSynergyFields],
-    });
+    const text = await this.getAnalysisText(champion, toOpggPosition(role));
 
     return {
       damageStyle: parseAnalysisDamageStyle(text),
@@ -256,16 +272,7 @@ export class OpggMcpSource implements MetaDataSource {
     opponent: ChampionRef,
     position: OpggPosition,
   ): Promise<MatchupResult> {
-    const text = await this.callToolText("lol_get_champion_analysis", {
-      game_mode: "ranked",
-      champion: toOpggChampionToken(candidate),
-      position,
-      lang: this.lang,
-      desired_output_fields: [
-        "data.weak_counters[].{champion_id,champion_name,play,win,win_rate}",
-        "data.strong_counters[].{champion_id,champion_name,play,win,win_rate}",
-      ],
-    });
+    const text = await this.getAnalysisText(candidate, position);
     const { weakCounters, strongCounters } = parseAnalysisCounters(text);
     const weakMatch = weakCounters.find((counter) =>
       matchesChampion(counter.championId, counter.championName, opponent),
@@ -315,37 +322,51 @@ export class OpggMcpSource implements MetaDataSource {
     championPosition: OpggPosition,
     partnerPosition?: OpggPosition | null,
   ): Promise<SynergyRow[]> {
-    const positionKey = partnerPosition ?? "all";
-    const cacheKey = `${champion.id}:${championPosition}:${positionKey}`;
-    const cached = this.analysisSynergyRows.get(cacheKey);
+    return this.getAnalysisText(champion, championPosition).then((text) => {
+      const rows = parseSynergyRows(text);
 
-    if (cached) {
-      return cached;
-    }
+      if (!partnerPosition) {
+        return rows;
+      }
 
-    const promise = this.loadAnalysisSynergyRows(champion, championPosition, partnerPosition);
-    this.analysisSynergyRows.set(cacheKey, promise);
-    return promise;
+      return rows.filter(
+        (row) => row.synergyPosition.toLowerCase() === partnerPosition,
+      );
+    });
   }
 
-  private async loadAnalysisSynergyRows(
+  private getAnalysisText(
     champion: ChampionRef,
     championPosition: OpggPosition,
-    partnerPosition?: OpggPosition | null,
-  ): Promise<SynergyRow[]> {
-    const synergyPositions = partnerPosition ? [partnerPosition] : positions;
-    const text = await this.callToolText("lol_get_champion_analysis", {
+  ): Promise<string> {
+    const cacheKey = `${this.catalog.version()}:${champion.id}:${championPosition}`;
+    const cached = this.analysisTextByChampionPosition.get(cacheKey);
+
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.text;
+    }
+
+    const promise = this.callToolText("lol_get_champion_analysis", {
       game_mode: "ranked",
       champion: toOpggChampionToken(champion),
       position: championPosition,
       lang: this.lang,
-      desired_output_fields: synergyPositions.flatMap((synergyPosition) => [
-        `data.synergies.${synergyPosition}[].{${synergyFields}}`,
-        `data.synergies.${synergyPosition}[].synergy_tier_data.{tier,rank,rank_prev,rank_prev_patch}`,
-      ]),
+      desired_output_fields: [
+        "data.{damage_type,mythic_items}",
+        "data.weak_counters[].{champion_id,champion_name,play,win,win_rate}",
+        "data.strong_counters[].{champion_id,champion_name,play,win,win_rate}",
+        ...analysisSynergyFields,
+      ],
+    }).catch((error) => {
+      this.analysisTextByChampionPosition.delete(cacheKey);
+      throw error;
     });
 
-    return parseSynergyRows(text);
+    this.analysisTextByChampionPosition.set(cacheKey, {
+      expiresAt: Date.now() + this.analysisCacheTtlMs,
+      text: promise,
+    });
+    return promise;
   }
 
   private async getRoleFitTable(): Promise<Map<number, RoleFit>> {
@@ -398,19 +419,21 @@ export class OpggMcpSource implements MetaDataSource {
   }
 
   private async callToolText(name: string, args: Record<string, unknown>): Promise<string> {
-    const client = await this.getClient();
-    const result = await client.callTool(
-      { name, arguments: args },
-      undefined,
-      { timeout: TOOL_REQUEST_TIMEOUT_MS },
-    );
-    const text = extractToolText(result);
+    return this.requestLimiter.run(async () => {
+      const client = await this.getClient();
+      const result = await client.callTool(
+        { name, arguments: args },
+        undefined,
+        { timeout: TOOL_REQUEST_TIMEOUT_MS },
+      );
+      const text = extractToolText(result);
 
-    if (!text) {
-      throw new Error(`OP.GG tool ${name} returned no text content`);
-    }
+      if (!text) {
+        throw new Error(`OP.GG tool ${name} returned no text content`);
+      }
 
-    return text;
+      return text;
+    });
   }
 
   private async getClient(): Promise<Client> {
@@ -469,6 +492,46 @@ export class OpggMcpSource implements MetaDataSource {
     for (const champion of this.catalog.all()) {
       this.championsByNormalizedName.set(normalizeLookupName(champion.name), champion);
     }
+  }
+}
+
+class ConcurrentRequestLimiter {
+  private active = 0;
+  private readonly waiting: Array<() => void> = [];
+
+  constructor(private readonly limit: number) {
+    if (!Number.isInteger(limit) || limit < 1) {
+      throw new Error("OP.GG request concurrency must be a positive integer");
+    }
+  }
+
+  async run<T>(task: () => Promise<T>): Promise<T> {
+    await this.acquire();
+
+    try {
+      return await task();
+    } finally {
+      this.release();
+    }
+  }
+
+  private acquire(): Promise<void> {
+    if (this.active < this.limit) {
+      this.active += 1;
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      this.waiting.push(() => {
+        this.active += 1;
+        resolve();
+      });
+    });
+  }
+
+  private release(): void {
+    this.active -= 1;
+    this.waiting.shift()?.();
   }
 }
 
@@ -1267,6 +1330,7 @@ function toError(error: unknown): Error {
 }
 
 export const opggMcpTestHooks = {
+  ConcurrentRequestLimiter,
   parseAllLaneMetaRows,
   parseAnalysisCounters,
   parseAnalysisDamageStyle,

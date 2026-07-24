@@ -114,6 +114,9 @@ function App(): JSX.Element {
   const refreshProData = (): void => {
     void window.api.refreshProData().then(setProDataStatus);
   };
+  const importProData = (): void => {
+    void window.api.importProData().then(setProDataStatus);
+  };
 
   return (
     <main className="app-shell">
@@ -219,6 +222,7 @@ function App(): JSX.Element {
           onClose={() => setSettingsOpen(false)}
           proDataStatus={proDataStatus}
           onRefreshProData={refreshProData}
+          onImportProData={importProData}
         />
       ) : null}
     </main>

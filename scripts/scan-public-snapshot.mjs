@@ -15,6 +15,11 @@ const blockedPathFragments = [
   ".DS_Store",
 ];
 
+const blockedFilePatterns = [
+  /(?:^|\/)(?:\d{4}_)?LoL_esports_match_data_from_OraclesElixir\.csv$/i,
+  /(?:^|\/)local-oe-snapshot\.json(?:\.gz)?$/i,
+];
+
 const contentRules = [
   { label: "local macOS user path", pattern: /\/Users\/[A-Za-z0-9._-]+/ },
   { label: "private key block", pattern: /-----BEGIN (?:RSA |OPENSSH |EC |DSA |)?PRIVATE KEY-----/ },
@@ -41,7 +46,10 @@ for (const file of files) {
     continue;
   }
 
-  if (blockedPathFragments.some((fragment) => file.includes(fragment))) {
+  if (
+    blockedPathFragments.some((fragment) => file.includes(fragment)) ||
+    blockedFilePatterns.some((pattern) => pattern.test(file))
+  ) {
     findings.push(`${file}: blocked public-snapshot path`);
     continue;
   }

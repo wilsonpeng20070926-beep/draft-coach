@@ -30,6 +30,7 @@ The current app includes meta anchoring, lane-counter signals, team-counter warn
 - Network-free reranking when only factor weights change.
 - Live and offline Simulator modes with explicit targets and hypothetical threat planning.
 - Optional professional-draft evidence with freshness, ranked-only fallback, multiple favorite teams, and expandable provenance.
+- Local, noncommercial professional-data import from a user-selected Oracle's Elixir CSV while the public snapshot workflow remains approval-gated.
 
 ## Download
 
@@ -112,6 +113,7 @@ Explanations are intentionally hedged when confidence is limited. Role inference
 - `Professional evidence`: enable/disable the validated pro snapshot contribution.
 - `Pro influence`: tune its bounded effect.
 - `Favorite teams`: optional, comma-separated strategy context with no default favorite.
+- `Import local professional data`: accepts a validated Draft Coach snapshot or a manually downloaded Oracle's Elixir CSV. Oracle's Elixir imports are local, optional, noncommercial, and never included in release assets.
 
 ## Troubleshooting
 

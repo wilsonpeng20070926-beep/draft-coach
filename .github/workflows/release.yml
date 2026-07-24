@@ -99,7 +99,7 @@ jobs:
           if [[ "$GITHUB_REF_NAME" == *-preview.* ]]; then
             cat > release-notes.md <<'EOF'
           > [!WARNING]
-          > This is an uncertified, unsigned friend preview. Riot product registration and the OP.GG and Leaguepedia/Fandom reviews are still pending. Draft Coach is not approved, endorsed, certified, or production-ready.
+          > This is an uncertified, unsigned friend preview. Riot product registration and the Leaguepedia/Fandom access and redistribution reviews are still pending. Draft Coach is not approved, endorsed, certified, or production-ready.
 
           Draft Coach is a read-only Windows and macOS companion for League of Legends champ select. It presents multiple explainable recommendations and never selects, hovers, locks, sends chat, or changes gameplay on the user's behalf.
 

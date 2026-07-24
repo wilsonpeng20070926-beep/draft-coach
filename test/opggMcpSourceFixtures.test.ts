@@ -285,6 +285,48 @@ describe("OP.GG fixture field mappings", () => {
     expect(rivenScore.notable).toBe(false);
   });
 
+  it("reuses one champion-analysis response across analysis and matchup factors", async () => {
+    const source = new OpggMcpSource(catalog);
+    let analysisCalls = 0;
+    (source as unknown as {
+      callToolText: (
+        name: string,
+        args: Record<string, unknown>,
+      ) => Promise<string>;
+    }).callToolText = async (name) => {
+      if (name === "lol_get_lane_matchup_guide") {
+        throw new Error("fixture forces analysis fallback");
+      }
+
+      analysisCalls += 1;
+      return fixtureText("lol_get_champion_analysis");
+    };
+
+    await source.getChampionAnalysis(orianna, "middle", "global", "emerald_plus");
+    await source.getMatchup(orianna, yasuo, "middle", "global", "emerald_plus");
+
+    expect(analysisCalls).toBe(1);
+  });
+
+  it("bounds simultaneous OP.GG requests", async () => {
+    const limiter = new hooks.ConcurrentRequestLimiter(2);
+    let active = 0;
+    let maximumActive = 0;
+
+    await Promise.all(
+      Array.from({ length: 8 }, () =>
+        limiter.run(async () => {
+          active += 1;
+          maximumActive = Math.max(maximumActive, active);
+          await new Promise((resolve) => setTimeout(resolve, 2));
+          active -= 1;
+        }),
+      ),
+    );
+
+    expect(maximumActive).toBe(2);
+  });
+
   it("orders known Orianna jungle synergies above neutral pairings", () => {
     const synergyFixture = JSON.parse(readFileSync("scripts/fixtures/synergy-json.json", "utf8")) as {
       response?: { content?: Array<{ type?: string; text?: string }> };

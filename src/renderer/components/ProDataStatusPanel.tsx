@@ -3,9 +3,11 @@ import type { ProDataStatus } from "../../shared/proData";
 export function ProDataStatusPanel({
   status,
   onRefresh,
+  onImport,
 }: {
   status: ProDataStatus | null;
   onRefresh?: () => void;
+  onImport?: () => void;
 }): JSX.Element | null {
   if (!status) {
     return null;
@@ -36,6 +38,21 @@ export function ProDataStatusPanel({
           >
             Refresh professional data
           </button>
+        ) : null}
+        {onImport ? (
+          <>
+            <button
+              type="button"
+              disabled={status.state === "refreshing" || status.state === "disabled"}
+              onClick={onImport}
+            >
+              Import local professional data
+            </button>
+            <span>
+              Accepts a Draft Coach snapshot or an Oracle&apos;s Elixir CSV for local,
+              noncommercial use. Imported data is never uploaded or republished.
+            </span>
+          </>
         ) : null}
       </div>
     </details>

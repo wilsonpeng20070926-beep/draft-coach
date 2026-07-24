@@ -15,6 +15,9 @@ export interface ProDataSource {
   getSnapshot(): ProDataSnapshot | null;
   getStatus(): ProDataStatus;
   refresh(reason?: "startup" | "interval" | "manual"): Promise<ProDataSnapshot | null>;
+  importSnapshot(bytes: Uint8Array): Promise<ProDataSnapshot>;
+  installSnapshot(value: unknown): Promise<ProDataSnapshot>;
+  reportImportError(message: string): void;
 }
 
 export interface StaticProDataSourceOptions {
@@ -144,6 +147,41 @@ export class StaticSnapshotProDataSource implements ProDataSource {
     });
 
     return this.refreshPromise;
+  }
+
+  async importSnapshot(bytes: Uint8Array): Promise<ProDataSnapshot> {
+    try {
+      const buffer = Buffer.from(bytes);
+      const decoded = isGzip(buffer) ? gunzipSync(buffer) : buffer;
+      const parsed = JSON.parse(decoded.toString("utf8")) as unknown;
+      return await this.installSnapshot(parsed);
+    } catch (error) {
+      this.setError(`Professional snapshot import failed: ${toError(error).message}`);
+      throw error;
+    }
+  }
+
+  async installSnapshot(value: unknown): Promise<ProDataSnapshot> {
+    if (!this.enabled) {
+      const error = new Error("Professional evidence is disabled");
+      this.setError(error.message);
+      throw error;
+    }
+
+    try {
+      const snapshot = this.validate(value);
+      await this.persistAtomically(snapshot);
+      this.snapshot = snapshot;
+      this.updateReadyStatus();
+      return snapshot;
+    } catch (error) {
+      this.setError(`Professional snapshot import failed: ${toError(error).message}`);
+      throw error;
+    }
+  }
+
+  reportImportError(message: string): void {
+    this.setError(`Professional snapshot import failed: ${message}`);
   }
 
   private async performRefresh(): Promise<ProDataSnapshot | null> {

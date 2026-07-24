@@ -13,6 +13,7 @@ const api: DraftCoachApi = {
   ping: () => ipcRenderer.invoke(ipcChannels.ping),
   getProDataStatus: () => ipcRenderer.invoke(ipcChannels.proDataGetStatus),
   refreshProData: () => ipcRenderer.invoke(ipcChannels.proDataRefresh),
+  importProData: () => ipcRenderer.invoke(ipcChannels.proDataImport),
   onProDataStatus: (callback) => {
     const listener = (
       _event: Electron.IpcRendererEvent,

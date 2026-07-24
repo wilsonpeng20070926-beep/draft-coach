@@ -181,6 +181,7 @@ function VisualFixture(): JSX.Element {
           saving={false}
           proDataStatus={proStatus}
           onRefreshProData={() => undefined}
+          onImportProData={() => undefined}
           onChange={() => undefined}
           onClose={() => setSettingsOpen(false)}
         />

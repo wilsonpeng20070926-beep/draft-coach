@@ -189,6 +189,46 @@ describe("static professional data source", () => {
     });
     source.stop();
   });
+
+  it("imports, verifies, and persists a local JSON or gzip snapshot", async () => {
+    const directory = await tempDirectory();
+    const local = snapshot("local-import", 3);
+    const source = new StaticSnapshotProDataSource({
+      cacheDirectory: directory,
+      remoteUrl: "https://example.test/pro.json",
+      refreshIntervalMs: 0,
+      networkAllowed: false,
+      now: () => now,
+    });
+    await source.start();
+
+    await source.importSnapshot(
+      gzipSync(Buffer.from(canonicalStringify(local))),
+    );
+
+    expect(source.getSnapshot()?.metadata.checksum).toBe(local.metadata.checksum);
+    expect(source.getStatus()).toMatchObject({
+      state: "ready",
+      gameCount: 3,
+    });
+    expect(
+      JSON.parse(await readFile(join(directory, "pro-snapshot.json"), "utf8")),
+    ).toMatchObject({
+      metadata: { checksum: local.metadata.checksum },
+    });
+
+    await expect(
+      source.importSnapshot(
+        Buffer.from(JSON.stringify({
+          ...local,
+          metadata: { ...local.metadata, checksum: "0".repeat(64) },
+        })),
+      ),
+    ).rejects.toThrow("checksum");
+    expect(source.getSnapshot()?.metadata.checksum).toBe(local.metadata.checksum);
+    expect(source.getStatus().lastError).toContain("checksum");
+    source.stop();
+  });
 });
 
 async function tempDirectory(): Promise<string> {

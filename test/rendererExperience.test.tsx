@@ -166,6 +166,7 @@ describe("Phase 6 renderer experience", () => {
         saving={false}
         proDataStatus={status("ready")}
         onRefreshProData={() => undefined}
+        onImportProData={() => undefined}
         onChange={() => undefined}
         onClose={() => undefined}
       />,
@@ -178,6 +179,9 @@ describe("Phase 6 renderer experience", () => {
     expect(html).toContain("Bilibili Gaming, T1");
     expect(html).toContain("Advanced ranked balance");
     expect(html).toContain("Refresh professional data");
+    expect(html).toContain("Import local professional data");
+    expect(html).toContain("local, noncommercial use");
+    expect(html).toContain("OP.GG ranked signals");
   });
 
   it("labels simulator targets uniquely and exposes the selected target", () => {

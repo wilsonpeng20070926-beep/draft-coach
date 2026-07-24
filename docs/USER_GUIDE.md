@@ -69,6 +69,7 @@ Advanced controls:
 - `Pro influence`: adjusts the bounded professional contribution.
 - `Favorite teams`: accepts multiple comma-separated teams for Pro-inspired and simulator context.
 - `Refresh professional data`: checks for a new snapshot without blocking live recommendations.
+- `Import local professional data`: selects a Draft Coach JSON/GZIP snapshot or an Oracle's Elixir CSV. Oracle's Elixir imports are transformed and stored locally for noncommercial use; Draft Coach does not upload or republish the selected file.
 
 The lightweight professional-data details surface shows source and age. Stale, unavailable, disabled, and ranked-only states remain visibly labeled.
 

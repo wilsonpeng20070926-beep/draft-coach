@@ -17,6 +17,8 @@ Draft Coach stores local app data in Electron's user-data directory:
 - OP.GG-backed recommendation data cache.
 - A validated professional-data aggregate snapshot and its freshness metadata.
 
+When the user explicitly chooses **Import local professional data**, Draft Coach reads the selected Draft Coach JSON/GZIP snapshot or Oracle's Elixir CSV and stores only the normalized aggregate snapshot in app data. It does not upload or republish the selected file.
+
 ## What The App Sends
 
 Draft Coach fetches:
@@ -26,6 +28,8 @@ Draft Coach fetches:
 - A project-hosted, compressed professional-data snapshot when professional evidence is enabled and network access is allowed.
 
 Professional snapshot refreshes do not include local League client state, account credentials, local picks, settings, or the LCU token. Direct Leaguepedia Cargo fallback is disabled by default and runs only when explicitly configured by the operator.
+
+The optional Oracle's Elixir path is local-only: Draft Coach does not download the CSV itself, and importing it produces no network request other than a Data Dragon champion-catalog refresh.
 
 The build-time Leaguepedia fetcher can authenticate with an email-verified bot identity supplied through the `LEAGUEPEDIA_BOT_USERNAME` and `LEAGUEPEDIA_BOT_PASSWORD` environment variables. Those credentials are used only for MediaWiki login and authenticated Cargo requests. They are not written to the repository, snapshot, build artifact, logs, application cache, or desktop package.
 
