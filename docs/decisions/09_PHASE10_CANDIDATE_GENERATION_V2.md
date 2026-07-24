@@ -57,7 +57,7 @@ More candidates × per-candidate analysis calls = more OP.GG load. Keep it bound
 - [ ] On a fixture draft, a champion **outside the meta top-N** but with strong synergy/comp/counter fit appears in the candidate pool (and, if it scores well, in the top 5) — impossible under the old pool. This is the headline proof.
 - [ ] The meta backbone is preserved: strong meta picks still appear (we add candidates, we don't drop the meta ones).
 - [ ] Pool size stays within the documented bound (≤ ~40) across fixtures; assert it in a test.
-- [ ] Per-draft OP.GG call budget is documented and bounded; `rerankLatest` makes **zero** network calls (regression guard).
+- [x] Per-draft OP.GG work is bounded by the 40-candidate cap and at most four simultaneous MCP requests. One full champion-analysis response is reused for damage, counters, and synergy factors; patch-scoped results remain cached for six hours. `rerankLatest` makes **zero** network calls (regression guard).
 - [ ] Excluded champions (bans, picked by either team) never appear (reuse `collectExcludedChampionIds`, `engine.ts:232-242`).
 - [ ] No regression; latency in-client feels unchanged (live smoke test).
 

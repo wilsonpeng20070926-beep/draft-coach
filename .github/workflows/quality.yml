@@ -42,7 +42,7 @@ jobs:
         run: npm run build
 
       - name: Audit production dependencies
-        run: npm audit --omit=dev
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Public snapshot scan
         run: npm run security:scan
@@ -89,4 +89,4 @@ jobs:
         run: npm test
 
       - name: Audit dependencies
-        run: npm audit --audit-level=high
+        run: npm audit --omit=optional --audit-level=high

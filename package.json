@@ -31,6 +31,7 @@
     "test:watch": "vitest",
     "pro:fetch": "tsx scripts/pro-data.ts fetch",
     "pro:build": "tsx scripts/pro-data.ts build",
+    "pro:import:oe": "tsx scripts/pro-data.ts import-oe",
     "pro:validate": "tsx scripts/pro-data.ts validate",
     "pro:checksum": "tsx scripts/pro-data.ts checksum",
     "security:scan": "node scripts/scan-public-snapshot.mjs",
@@ -53,6 +54,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "csv-parse": "^7.0.1",
     "league-connect": "^5.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

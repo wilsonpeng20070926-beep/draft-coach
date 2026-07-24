@@ -13,6 +13,7 @@ export const ipcChannels = {
   ping: "app:ping",
   proDataGetStatus: "pro-data:status:get",
   proDataRefresh: "pro-data:refresh",
+  proDataImport: "pro-data:import",
   proDataStatus: "pro-data:status",
   lcuStatus: "lcu:status",
   draftState: "draft:state",
@@ -46,6 +47,7 @@ export interface DraftCoachApi {
   ping: () => Promise<string>;
   getProDataStatus: () => Promise<ProDataStatus>;
   refreshProData: () => Promise<ProDataStatus>;
+  importProData: () => Promise<ProDataStatus>;
   onProDataStatus: (callback: (status: ProDataStatus) => void) => () => void;
   onLcuStatus: (callback: (status: LcuStatus) => void) => () => void;
   onDraftState: (callback: (draftState: DraftState) => void) => () => void;

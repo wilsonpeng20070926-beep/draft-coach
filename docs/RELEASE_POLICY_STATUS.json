@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "reviewedAt": "2026-07-16",
+  "reviewedAt": "2026-07-24",
   "uncertifiedPreview": {
     "status": "owner-authorized",
     "ownerAuthorizedAt": "2026-07-13",
@@ -8,11 +8,10 @@
     "requiredTagPattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+-preview\\.[0-9]+$",
     "acknowledgedGateIds": [
       "riot-product-registration",
-      "leaguepedia-snapshot-redistribution",
-      "opgg-public-use-review"
+      "leaguepedia-snapshot-redistribution"
     ],
-    "summary": "The repository owner explicitly authorized a clearly labeled friend-preview prerelease while the three external reviews remain pending. This does not approve or close any public-release gate.",
-    "requiredDisclosure": "Riot registration and the OP.GG and Leaguepedia/Fandom reviews remain unresolved. This build is an uncertified, unsigned friend preview and must not be represented as approved, endorsed, certified, or production-ready."
+    "summary": "The repository owner explicitly authorized a clearly labeled friend-preview prerelease while the two remaining external reviews remain pending. This does not approve or close either remaining public-release gate.",
+    "requiredDisclosure": "Riot product registration and the Leaguepedia/Fandom access and redistribution reviews remain unresolved. This build is an uncertified, unsigned friend preview and must not be represented as approved, endorsed, certified, or production-ready."
   },
   "publicRelease": [
     {
@@ -38,9 +37,9 @@
     },
     {
       "id": "opgg-public-use-review",
-      "status": "blocked",
-      "summary": "OP.GG's help guidance conditionally permits crawling with citation and responsible request volume, while its general Terms prohibit scraping or data mining and restrict commercial reuse without express written consent; no project-specific written authorization is recorded.",
-      "ownerAction": "Obtain and record written OP.GG clarification or permission for the MCP-backed request volume, caching, citation, redistribution, and any public or commercial distribution posture.",
+      "status": "approved",
+      "summary": "OP.GG Support replied in writing on 2026-07-21 to the project's disclosed free-beta request. OP.GG requires a separate agreement for commercial products, but stated that it does not impose a specific limit on the described small-scale use. Access may still be restricted based on request volume or usage patterns to protect service stability. The approved scope keeps six-hour patch-scoped local caching, a candidate cap of 40, visible attribution, no raw-response redistribution, and conservative request reuse.",
+      "ownerAction": "Keep the integration free, small-scale, attributed, locally cached, and non-redistributive. Monitor request volume and preserve fallback behavior. Obtain a separate OP.GG agreement before monetization, commercial distribution, materially higher traffic, or a material change to the disclosed access pattern.",
       "sourceUrls": [
         "https://help.op.gg/hc/en-us/articles/31091405109401-Can-I-use-OP-GG-data",
         "https://op.gg/lol/policies/agreement"
@@ -59,10 +58,11 @@
     {
       "id": "oracle-elixir-release-exclusion",
       "status": "approved",
-      "summary": "Oracle's Elixir is not imported, bundled, fetched, or required by the desktop app or release pipeline.",
-      "ownerAction": "Keep Oracle's Elixir and any other noncommercial-only dataset outside release-critical paths unless a dedicated license review approves it.",
+      "summary": "The desktop app can transform a user-selected Oracle's Elixir CSV into a checksummed local professional-data snapshot for noncommercial use. Draft Coach does not fetch, bundle, upload, or publish the source CSV or generated snapshot, and the release pipeline does not depend on it.",
+      "ownerAction": "Keep Oracle's Elixir data local, optional, noncommercial, and outside all release assets and automated fetch/publish workflows. Remove or replace it before any commercial distribution unless a dedicated agreement permits that use.",
       "sourceUrls": [
-        "https://lol.timsevenhuysen.com/about/"
+        "https://oracleselixir.com/tools/downloads",
+        "https://lol.timsevenhuysen.com/about/frequently-asked-questions/"
       ]
     },
     {

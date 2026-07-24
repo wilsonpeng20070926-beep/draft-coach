@@ -32,7 +32,9 @@ OP.GG policy references:
 - https://help.op.gg/hc/en-us/articles/31091405109401-Can-I-use-OP-GG-data
 - https://op.gg/lol/policies/agreement
 
-OP.GG's help guidance, updated December 31, 2025, says crawling is not generally prohibited but requires source citation and care not to impair the service; it warns that commercial use without citation or excessive requests may be restricted. OP.GG's general Terms of Use, effective January 10, 2024, separately prohibit scraping or data mining through the Sites or Services and restrict commercial reuse without express written consent. Because those statements are not equivalent, the project treats OP.GG-derived access as release-blocking until OP.GG provides written clarification or permission covering the planned MCP-backed usage, request volume, caching, citation, and redistribution posture.
+OP.GG Support replied in writing on 2026-07-21 to the project's request describing a free desktop beta, six-hour patch-scoped local caching, a candidate cap of 40, source citation, and no raw-response redistribution. The response said that commercial products require a separate agreement, while the described small-scale use has no specific limit. It also warned that access may be restricted based on request volume or usage patterns to protect service stability.
+
+The project therefore permits OP.GG-backed access only for the disclosed free, small-scale, attributed beta posture. It reuses analysis responses across scoring factors, retains fallback behavior, and does not redistribute raw OP.GG responses. Monetization, commercial distribution, materially higher traffic, or a material access-pattern change requires a new OP.GG review and separate agreement. The complete support correspondence is retained privately; only its decision date and non-sensitive operating conditions are recorded here.
 
 ## Professional Draft Snapshot
 
@@ -54,7 +56,16 @@ Leaguepedia's API documentation describes the API as a courtesy without a guaran
 
 Leaguepedia API access, attribution, caching, and redistribution terms must be re-verified before a public beta. The application attributes the source to Leaguepedia contributors and links to Leaguepedia. Community guidance indicates that API-derived data is likely covered by CC BY-SA 3.0, but the Fandom admin review has not yet confirmed the exact share-alike scope for the derived JSON/GZIP files. Automated fetching remains disabled unless `PRO_SNAPSHOT_FETCH_ENABLED` is explicitly set to `true` after the API-access review. Snapshot release publishing remains separately disabled unless `PRO_SNAPSHOT_PUBLISH_ENABLED` is explicitly set to `true` after the redistribution review. These are release gates; the implementation does not assume access or redistribution permission.
 
-Oracle's Elixir is not used by the release pipeline or desktop app. Any future optional import experiment must remain non-release-critical and must honor its stated noncommercial limitation. A monetized release requires a dedicated data-license review and removal or replacement of any noncommercial-only source.
+### Optional local noncommercial import
+
+To keep professional evidence functional while Leaguepedia access and redistribution approval is unresolved, Settings can import a user-selected Oracle's Elixir CSV. The importer keeps only complete games from the app's current three-patch window and the existing international/tier-one competition allowlist, maps picks to roles, builds the same checksummed aggregate snapshot used by the rest of the app, and stores it only in Electron's local user-data directory.
+
+Oracle's Elixir states that its downloadable data may be used only noncommercially. Draft Coach therefore does not download the CSV, bundle it, upload it, include the generated snapshot in a release, or make it part of either GitHub snapshot workflow. The file picker is the only entry point, and the app reads the selected local file only after a user action. The local snapshot identifies Oracle's Elixir / Tim Sevenhuysen as its source and carries a noncommercial/no-redistribution warning.
+
+- Downloads: https://oracleselixir.com/tools/downloads
+- Usage FAQ: https://lol.timsevenhuysen.com/about/frequently-asked-questions/
+
+This local import makes professional evidence available for a free local preview; it does not resolve public snapshot redistribution or commercial licensing. A monetized release requires a dedicated agreement or a replacement data source.
 
 ## Fixtures
 

@@ -90,6 +90,14 @@ Record privately:
 - required citation, caching, volume, and redistribution conditions;
 - whether a new review is required before monetization.
 
+Resolution recorded 2026-07-24:
+
+- OP.GG Support replied on 2026-07-21 to the disclosed free, small-scale beta request.
+- The described small-scale use has no specific limit, but access can be restricted when request volume or usage patterns affect service stability.
+- Commercial service or product use requires a separate agreement.
+- The project keeps six-hour patch-scoped local caching, visible attribution, a candidate cap of 40, request reuse, and no raw-response redistribution.
+- The complete correspondence and support identifier remain in the private maintainer record.
+
 ## Closing A Gate
 
 For each response:

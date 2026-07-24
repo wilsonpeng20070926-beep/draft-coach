@@ -4,7 +4,7 @@ Review date: 2026-07-11
 
 Release recommendation: **stable public release blocked; suitable for the explicitly disclosed uncertified friend-preview channel and controlled local beta evaluation**.
 
-The implementation gates are green. Stable and broadly promoted public distribution remains blocked until the machine-readable policy status records Riot product registration plus Leaguepedia and OP.GG public-use/redistribution reviews. The owner-authorized preview exception does not close those gates; it permits only a clearly labeled prerelease carrying the recorded disclosure. This is an external approval boundary, not an engine failure.
+The implementation gates are green. OP.GG Support approved the disclosed free, small-scale use posture on 2026-07-21, subject to service-stability limits and a separate agreement before commercial use. Stable and broadly promoted public distribution remains blocked until the machine-readable policy status records Riot product registration plus Leaguepedia access and redistribution approval. The owner-authorized preview exception does not close those gates; it permits only a clearly labeled prerelease carrying the recorded disclosure. This is an external approval boundary, not an engine failure.
 
 ## Evidence summary
 
@@ -64,5 +64,5 @@ Before changing the recommendation from blocked to public-beta-ready:
 - Professional continuation recall measures resemblance to observed drafts, not unique strategic correctness.
 - Match loss is only a proxy for risk calibration and is confounded by team strength and execution.
 - Expert review has not yet supplied enough real-draft samples to justify tuning constants.
-- OP.GG, Leaguepedia, and Riot policies can change; review dates must remain visible.
+- OP.GG, Leaguepedia, and Riot policies can change; review dates and scope limits must remain visible.
 - Signed/negative advice is evidence-gated but cannot account for player mastery, swaps, comms, or planned compositions.

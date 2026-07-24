@@ -29,7 +29,7 @@ describe("release policy channels", () => {
 
   it("continues to block stable publication while external reviews are unresolved", async () => {
     await expect(runPolicy("public")).rejects.toMatchObject({
-      stderr: expect.stringContaining("public release is blocked by 3 unresolved policy gate(s)"),
+      stderr: expect.stringContaining("public release is blocked by 2 unresolved policy gate(s)"),
     });
   });
 

@@ -1,5 +1,6 @@
-import { join } from "node:path";
-import { BrowserWindow, app, ipcMain } from "electron";
+import { readFile } from "node:fs/promises";
+import { extname, join } from "node:path";
+import { BrowserWindow, app, dialog, ipcMain } from "electron";
 import { createChampionAttributeProvider } from "./catalog/championAttributes";
 import { DataDragonChampionCatalog, type ChampionCatalog } from "./catalog/championCatalog";
 import { createAppConfigStore, type AppConfigStore } from "./config/appConfigStore";
@@ -15,6 +16,7 @@ import {
   LeaguepediaCargoAdapter,
   leaguepediaBotAuthenticationFromEnvironment,
 } from "./data/pro/leaguepediaCargo";
+import { OracleElixirCsvAdapter } from "./data/pro/oraclesElixirCsv";
 import { deriveProPatchWindow } from "./data/pro/patchWindow";
 import {
   SnapshotProAnalyticsProvider,
@@ -887,6 +889,61 @@ ipcMain.handle(ipcChannels.proDataGetStatus, () =>
 );
 ipcMain.handle(ipcChannels.proDataRefresh, async () => {
   await proDataSource?.refresh("manual");
+  const status = proDataSource?.getStatus() ?? emptyProDataStatus();
+  sendProDataStatus(status);
+  return status;
+});
+ipcMain.handle(ipcChannels.proDataImport, async () => {
+  const selection = await dialog.showOpenDialog({
+    title: "Import professional data",
+    properties: ["openFile"],
+    filters: [
+      {
+        name: "Professional data",
+        extensions: ["csv", "json", "gz"],
+      },
+    ],
+  });
+
+  if (selection.canceled || !selection.filePaths[0]) {
+    return proDataSource?.getStatus() ?? emptyProDataStatus();
+  }
+
+  try {
+    const inputPath = selection.filePaths[0];
+
+    if (extname(inputPath).toLowerCase() === ".csv") {
+      if (!catalog || !proDataSource) {
+        throw new Error("Champion catalog is not ready");
+      }
+
+      await catalog.refresh().catch((error: unknown) => {
+        console.warn(
+          "[ProData] Data Dragon refresh failed; using cached catalog",
+          toError(error).message,
+        );
+      });
+      const imported = await new OracleElixirCsvAdapter(catalog).importFile(
+        inputPath,
+        deriveProPatchWindow(catalog.version()),
+      );
+      const snapshot = buildProDataSnapshot(imported.drafts, {
+        generatedAt: new Date().toISOString(),
+        source: "Oracle's Elixir (local noncommercial import)",
+        sourceUrl: "https://oracleselixir.com/tools/downloads",
+        attribution: "Oracle's Elixir / Tim Sevenhuysen",
+        warnings: imported.warnings,
+        complete: true,
+      });
+      await proDataSource.installSnapshot(snapshot);
+    } else {
+      const bytes = await readFile(inputPath);
+      await proDataSource?.importSnapshot(bytes);
+    }
+  } catch (error) {
+    proDataSource?.reportImportError(toError(error).message);
+  }
+
   const status = proDataSource?.getStatus() ?? emptyProDataStatus();
   sendProDataStatus(status);
   return status;
